@@ -1,0 +1,17 @@
+{
+  "name": "Solo Quest",
+  "short_name": "Solo Quest",
+  "description": "A solo tabletop RPG narrated live by Claude, grounded in the open D&D 5e SRD.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0d11",
+  "theme_color": "#0c0d11",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,12 @@
+name = "solo-quest-dm"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Restrict who may use your key. After deploying the site, set this to your
+# exact site URL, e.g. "https://yourname.github.io". Comma-separate several.
+# Leaving it "*" lets ANY site call your worker (and spend your credits).
+[vars]
+ALLOWED_ORIGIN = "*"
+
+# ANTHROPIC_API_KEY is a SECRET, not a var. Never put it here. Set it with:
+#   npx wrangler secret put ANTHROPIC_API_KEY

@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A solo tabletop RPG narrated live by Claude, grounded in the open D&D 5e SRD.">
+<meta name="theme-color" content="#0c0d11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Solo Quest">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<title>Solo Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@400;500;700;800&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0c0d11; --bg-2:#131520;
+    --ink:#ece2cd; --ink-dim:#a89b83; --ink-faint:#6f6653;
+    --panel:#16141b; --panel-edge:#2a2634; --story:#191621;
+    --ember:#e0a94a; --ember-deep:#b7822f;
+    --crimson:#c14b45; --crimson-deep:#7d2a27;
+    --sage:#7fae86; --violet:#8a7bb8;
+    --radius:14px;
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --disp:"Grenze Gotisch", "Spectral", Georgia, serif;
+    --body:"Spectral", Georgia, "Times New Roman", serif;
+  }
+  *{box-sizing:border-box}
+  html{height:100%; scroll-padding-top: var(--safe-t);}
+  body{
+    margin:0; min-height:100%;
+    background:
+      radial-gradient(120% 80% at 50% -10%, #1a1626 0%, rgba(26,22,38,0) 55%),
+      radial-gradient(80% 50% at 50% 108%, #241a12 0%, rgba(36,26,18,0) 60%),
+      var(--bg);
+    background-attachment: fixed;
+    color:var(--ink); font-family:var(--body);
+    font-size:17px; line-height:1.62; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  button{font-family:inherit; cursor:pointer; color:inherit}
+  input,textarea,select{font-family:inherit}
+  .wrap{max-width:760px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; padding-top:var(--safe-t);}
+  .hidden{display:none !important}
+
+  /* ---------- START / CREATE ---------- */
+  #create{flex:1; padding:30px 20px calc(30px + var(--safe-b));}
+  .lantern{width:52px;height:52px;margin:6px auto 4px;display:block; filter:drop-shadow(0 0 22px rgba(224,169,74,.45));}
+  .title{font-family:var(--disp); font-weight:800; font-size:clamp(42px,12vw,70px); line-height:.92; text-align:center; margin:.1em 0;
+    background:linear-gradient(180deg,#f4e6c4,#d79f3f 78%,#9c6f24); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 14px rgba(224,169,74,.22));}
+  .tagline{text-align:center; color:var(--ink-dim); font-style:italic; font-size:1.02rem; margin:0 0 22px; letter-spacing:.02em}
+
+  .field-label{font-family:var(--disp); font-weight:500; font-size:.82rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ember-deep); margin:22px 2px 10px}
+  .field-label .opt{color:var(--ink-faint); font-weight:400; letter-spacing:.04em; text-transform:none; font-size:.72rem; margin-left:6px; font-family:var(--body); font-style:italic}
+
+  .input-row{display:flex; gap:8px}
+  .name-input{width:100%; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; color:var(--ink); font-size:1.1rem; padding:13px 15px; outline:none; transition:border-color .2s, box-shadow .2s}
+  .name-input::placeholder{color:var(--ink-faint); font-style:italic}
+  .name-input:focus{border-color:var(--ember-deep); box-shadow:0 0 0 3px rgba(224,169,74,.13)}
+  .dice-mini{flex:none; width:52px; border:1px solid var(--panel-edge); background:var(--panel); border-radius:12px; font-size:1.25rem; transition:border-color .16s, background .16s, transform .3s}
+  .dice-mini:hover{border-color:var(--ember-deep); background:rgba(224,169,74,.06)}
+  .dice-mini:active{transform:rotate(-24deg) scale(.94)}
+
+  .classes{display:grid; grid-template-columns:1fr; gap:9px}
+  .class-card{display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; padding:12px 14px; transition:border-color .18s, background .18s, transform .06s;}
+  .class-card:hover{border-color:#463c4f}
+  .class-card:active{transform:translateY(1px)}
+  .class-card[aria-pressed="true"]{border-color:var(--ember); background:linear-gradient(180deg,rgba(224,169,74,.10),rgba(224,169,74,.02)); box-shadow:0 0 0 1px var(--ember) inset, 0 6px 24px -12px rgba(224,169,74,.5)}
+  .class-emblem{font-size:1.6rem; line-height:1; margin-top:2px; width:28px; text-align:center; flex:none}
+  .class-name{font-family:var(--disp); font-weight:700; font-size:1.18rem; color:var(--ink)}
+  .class-blurb{color:var(--ink-dim); font-size:.9rem; line-height:1.42; margin-top:1px}
+  .class-stats{margin-top:5px; font-size:.76rem; color:var(--ink-faint)}
+
+  select.feat-select{width:100%; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; color:var(--ink); font-size:1rem; padding:13px 15px; outline:none; appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--ember-deep) 50%),linear-gradient(135deg,var(--ember-deep) 50%,transparent 50%); background-position:calc(100% - 20px) 20px,calc(100% - 14px) 20px; background-size:6px 6px,6px 6px; background-repeat:no-repeat;}
+  select.feat-select:focus{border-color:var(--ember-deep)}
+  .feat-desc{color:var(--ink-faint); font-size:.85rem; font-style:italic; margin:7px 2px 0; min-height:1.1em}
+
+  .begin{margin-top:26px; width:100%; border:none; border-radius:12px; padding:16px; font-family:var(--disp); font-weight:700; font-size:1.3rem; letter-spacing:.03em; color:#241a08; background:linear-gradient(180deg,#f0c766,#d49a37); box-shadow:0 10px 30px -12px rgba(224,169,74,.6); transition:filter .18s, transform .06s, opacity .2s}
+  .begin:hover{filter:brightness(1.06)}
+  .begin:active{transform:translateY(1px)}
+  .begin:disabled{opacity:.4; filter:grayscale(.4); cursor:not-allowed; box-shadow:none}
+  .create-note{text-align:center; color:var(--ink-faint); font-size:.82rem; margin:16px 4px 0; line-height:1.5}
+  .credit{text-align:center; color:#5a5344; font-size:.72rem; margin:10px 4px 0; line-height:1.5}
+  .credit a{color:#7a6f57}
+
+  /* tales list */
+  #talesList{margin-bottom:6px}
+  .tale-card{display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; padding:11px 13px; margin-bottom:9px}
+  .tale-card.dead{opacity:.62}
+  .tale-emblem{font-size:1.5rem; flex:none; width:30px; text-align:center}
+  .tale-meta{flex:1; min-width:0}
+  .tale-name{font-family:var(--disp); font-weight:700; font-size:1.08rem; color:var(--ink); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tale-fallen{font-family:var(--body); font-weight:400; font-style:italic; font-size:.78rem; color:var(--crimson); margin-left:6px}
+  .tale-sub{font-size:.78rem; color:var(--ink-faint)}
+  .tale-actions{display:flex; gap:7px; flex:none; align-items:center}
+  .tale-cont{border:1px solid var(--ember-deep); background:rgba(224,169,74,.08); color:var(--ember); border-radius:9px; padding:8px 13px; font-weight:600; font-size:.88rem; white-space:nowrap}
+  .tale-cont:active{transform:translateY(1px)}
+  .tale-del{border:1px solid var(--panel-edge); background:transparent; color:var(--ink-faint); border-radius:9px; width:38px; height:36px; font-size:1rem}
+  .tale-del:hover{border-color:var(--crimson-deep); color:var(--crimson)}
+  .divider-row{display:flex; align-items:center; gap:12px; margin:26px 0 4px; color:var(--ember-deep)}
+  .divider-row::before,.divider-row::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(183,130,47,.5),transparent)}
+  .divider-row span{font-family:var(--disp); font-weight:500; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; white-space:nowrap}
+
+  /* ---------- PLAY ---------- */
+  #play{flex:1; display:flex; flex-direction:column; min-height:0}
+  .hud{position:sticky; top:var(--safe-t); z-index:5; background:linear-gradient(180deg, rgba(12,13,17,.96), rgba(12,13,17,.82) 70%, rgba(12,13,17,0)); backdrop-filter:blur(8px); padding:9px 14px 12px;}
+  .hud-row{display:flex; align-items:center; gap:10px}
+  .hud-id{flex:1; min-width:0; cursor:pointer}
+  .hud-name{font-family:var(--disp); font-weight:700; font-size:1.06rem; color:var(--ink); line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .hud-sub{font-size:.74rem; color:var(--ink-faint); letter-spacing:.03em; margin-top:1px}
+  .hud-sub .sw{color:var(--crimson)}
+  .menu-btn{flex:none; width:38px; height:38px; border-radius:9px; border:1px solid var(--panel-edge); background:var(--panel); font-size:1.1rem; display:grid; place-items:center; color:var(--ink-dim)}
+  .menu-btn:active{transform:translateY(1px)}
+  .meters{display:flex; gap:8px; margin-top:9px; cursor:pointer}
+  .meter{flex:1; background:var(--panel); border:1px solid var(--panel-edge); border-radius:9px; padding:6px 9px; min-width:0}
+  .meter .m-top{display:flex; justify-content:space-between; align-items:baseline; gap:6px}
+  .meter .m-lab{font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); font-family:var(--disp); font-weight:500}
+  .meter .m-val{font-size:.9rem; font-weight:600; font-variant-numeric:tabular-nums}
+  .bar{height:5px; border-radius:3px; background:#221d29; margin-top:5px; overflow:hidden}
+  .bar > i{display:block; height:100%; border-radius:3px; transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .hpfill{background:linear-gradient(90deg,var(--crimson-deep),var(--crimson))}
+  .xpfill{background:linear-gradient(90deg,var(--ember-deep),var(--ember))}
+  .hp .m-val{color:var(--crimson)} .xp .m-val{color:var(--ember)} .gold .m-val{color:var(--ember)}
+  @keyframes flashdmg{0%{background:rgba(193,75,69,.35)}100%{background:var(--panel)}}
+  @keyframes flashheal{0%{background:rgba(127,174,134,.32)}100%{background:var(--panel)}}
+  .flash-dmg{animation:flashdmg .9s ease}
+  .flash-heal{animation:flashheal .9s ease}
+
+  .story{flex:1; overflow-y:auto; padding:8px 18px 20px; -webkit-overflow-scrolling:touch}
+  .scene-mark{display:flex; align-items:center; gap:12px; margin:22px 0 14px; color:var(--ember-deep)}
+  .scene-mark::before,.scene-mark::after{content:""; flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(183,130,47,.5),transparent)}
+  .scene-mark span{font-family:var(--disp); font-weight:500; font-size:.78rem; letter-spacing:.18em; text-transform:uppercase; white-space:nowrap}
+  .turn{margin:0 0 4px; animation:rise .5s ease both}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+  .turn.dm .body{color:var(--ink); font-size:1.06rem; line-height:1.66}
+  .turn.dm .body p{margin:0 0 .85em}
+  .turn.dm .body p:first-child::first-letter{ font-family:var(--disp); font-size:2.9em; line-height:.72; float:left; margin:.04em .09em -.04em 0; color:var(--ember); font-weight:700; }
+  .turn.player{margin:16px 0 6px; padding:8px 0 8px 15px; border-left:2px solid var(--ember-deep); color:var(--ember); font-style:italic; font-size:1rem}
+  .turn.player .who{font-family:var(--disp); font-style:normal; font-weight:500; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint); display:block; margin-bottom:1px}
+  .roll-slip{display:flex; align-items:center; gap:12px; justify-content:center; margin:14px auto; max-width:340px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; padding:11px 15px}
+  .roll-slip.crit{border-color:var(--ember); box-shadow:0 0 0 1px var(--ember) inset}
+  .roll-slip.fumble{border-color:var(--crimson-deep)}
+  .roll-slip .r-head{font-family:var(--disp); font-weight:600; font-size:.95rem}
+  .roll-slip .r-math{color:var(--ink-dim); font-variant-numeric:tabular-nums; font-size:.85rem}
+  .r-succ{color:var(--sage)} .r-fail{color:var(--crimson)}
+  .thinking{color:var(--ink-faint); font-style:italic; display:inline-flex; gap:3px; align-items:center}
+  .thinking i{width:4px;height:4px;border-radius:50%;background:var(--ember-deep); display:inline-block; animation:tw 1.1s infinite ease-in-out}
+  .thinking i:nth-child(2){animation-delay:.18s} .thinking i:nth-child(3){animation-delay:.36s}
+  @keyframes tw{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+  .dock{position:sticky; bottom:0; z-index:5; padding:10px 14px calc(12px + var(--safe-b)); background:linear-gradient(0deg, var(--bg) 62%, rgba(12,13,17,.75) 88%, rgba(12,13,17,0)); backdrop-filter:blur(6px)}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:9px}
+  .chip{border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink); border-radius:999px; padding:9px 15px; font-size:.95rem; line-height:1.2; transition:border-color .16s, background .16s, transform .06s; text-align:left}
+  .chip:hover{border-color:var(--ember-deep); background:rgba(224,169,74,.06)}
+  .chip:active{transform:translateY(1px)}
+  .composer{display:flex; gap:9px; align-items:flex-end}
+  .composer textarea{flex:1; resize:none; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; color:var(--ink); font-size:1rem; padding:12px 14px; max-height:120px; outline:none; line-height:1.4}
+  .composer textarea:focus{border-color:var(--ember-deep)}
+  .composer textarea::placeholder{color:var(--ink-faint); font-style:italic}
+  .send{flex:none; width:48px; height:48px; border-radius:12px; border:none; display:grid; place-items:center; background:linear-gradient(180deg,#f0c766,#d49a37); color:#241a08; box-shadow:0 8px 22px -12px rgba(224,169,74,.7)}
+  .send:disabled{opacity:.4; filter:grayscale(.5); box-shadow:none}
+  .send:active{transform:translateY(1px)}
+  .dicepanel{background:var(--panel); border:1px solid var(--ember-deep); border-radius:14px; padding:15px 16px; box-shadow:0 12px 40px -18px rgba(224,169,74,.5)}
+  .dice-reason{color:var(--ink-dim); font-size:.95rem; font-style:italic; margin-bottom:8px}
+  .dice-call{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px}
+  .dice-check{font-family:var(--disp); font-weight:700; font-size:1.15rem; color:var(--ink)}
+  .dice-dc{font-family:var(--disp); font-weight:700; font-size:1.05rem; color:var(--ember); white-space:nowrap; text-align:right}
+  .dice-dc small{color:var(--ink-faint); font-family:var(--body); font-weight:400; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; display:block}
+  .roll-btn{width:100%; display:flex; align-items:center; justify-content:center; gap:12px; border:none; border-radius:11px; padding:12px; font-family:var(--disp); font-weight:700; font-size:1.2rem; color:#241a08; background:linear-gradient(180deg,#f0c766,#d49a37)}
+  .roll-btn:disabled{opacity:.6}
+  .roll-btn:active{transform:translateY(1px)}
+  .modnote{text-align:center; color:var(--ink-faint); font-size:.8rem; margin-top:9px}
+  .stopwrap{display:flex; justify-content:center}
+  .stop-btn{border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink-dim); border-radius:999px; padding:8px 18px; font-size:.88rem}
+
+  .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + var(--safe-b)); z-index:40; background:#211b12; border:1px solid var(--ember-deep); color:var(--ember); font-family:var(--disp); font-weight:600; padding:10px 20px; border-radius:999px; box-shadow:0 12px 40px -14px rgba(0,0,0,.8); opacity:0; pointer-events:none; transition:opacity .3s, transform .3s}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px)}
+
+  /* overlays */
+  .overlay{position:fixed; inset:0; z-index:50; background:rgba(6,6,9,.72); backdrop-filter:blur(4px); display:flex; align-items:flex-end; justify-content:center;}
+  .sheet{width:100%; max-width:760px; max-height:88dvh; overflow-y:auto; background:var(--bg-2); border:1px solid var(--panel-edge); border-bottom:none; border-radius:18px 18px 0 0; padding:20px 20px calc(24px + var(--safe-b)); animation:slideup .28s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes slideup{from{transform:translateY(24px); opacity:.6}to{transform:none; opacity:1}}
+  .sheet-h{display:flex; justify-content:space-between; align-items:center; margin-bottom:4px}
+  .sheet-title{font-family:var(--disp); font-weight:700; font-size:1.5rem; color:var(--ink)}
+  .x-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink-dim); font-size:1.1rem}
+  .sheet-sub{color:var(--ink-dim); font-size:.9rem; margin-bottom:16px}
+  .flavor{background:var(--panel); border:1px solid var(--panel-edge); border-radius:11px; padding:11px 14px; margin-bottom:16px; font-size:.95rem; line-height:1.5}
+  .flavor .fl-line{margin:0 0 6px} .flavor .fl-line:last-child{margin:0}
+  .flavor b{color:var(--ember); font-weight:600; font-family:var(--disp); font-size:.82rem; letter-spacing:.06em}
+  .flavor .fl-empty{color:var(--ink-faint); font-style:italic}
+  .abilities{display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-bottom:18px}
+  .ab{background:var(--panel); border:1px solid var(--panel-edge); border-radius:11px; padding:9px 6px; text-align:center}
+  .ab .ab-lab{font-family:var(--disp); font-size:.66rem; letter-spacing:.1em; color:var(--ink-faint); text-transform:uppercase}
+  .ab .ab-mod{font-family:var(--disp); font-weight:700; font-size:1.4rem; color:var(--ink); line-height:1.1; margin-top:2px}
+  .ab .ab-score{font-size:.74rem; color:var(--ink-faint)}
+  .sec-lab{font-family:var(--disp); font-weight:500; font-size:.76rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ember-deep); margin:0 0 8px; display:flex; justify-content:space-between; align-items:center}
+  .edit-link{font-family:var(--body); font-weight:400; letter-spacing:.02em; text-transform:none; font-size:.85rem; color:var(--ember); background:none; border:none; padding:0}
+  .inv-list{list-style:none; margin:0 0 18px; padding:0; display:flex; flex-direction:column; gap:6px}
+  .inv-list li{background:var(--panel); border:1px solid var(--panel-edge); border-radius:9px; padding:9px 13px; font-size:.95rem; display:flex; align-items:center; gap:9px}
+  .inv-list li::before{content:"\25C6"; color:var(--ember-deep); font-size:.7rem}
+  .inv-empty{color:var(--ink-faint); font-style:italic; font-size:.92rem; margin-bottom:18px}
+  .cond-row{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px}
+  .cond{background:rgba(193,75,69,.12); border:1px solid var(--crimson-deep); color:var(--crimson); border-radius:999px; padding:5px 13px; font-size:.85rem; font-weight:500}
+  .sheet-btns{display:flex; flex-direction:column; gap:9px; margin-top:8px}
+  .ghost-btn{width:100%; border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink); border-radius:11px; padding:13px; font-family:var(--disp); font-weight:600; font-size:1rem}
+  .ghost-btn:active{transform:translateY(1px)}
+  .danger-btn{width:100%; border:1px solid var(--crimson-deep); background:rgba(193,75,69,.08); color:var(--crimson); border-radius:11px; padding:13px; font-family:var(--disp); font-weight:600; font-size:1rem}
+  .danger-btn:active{transform:translateY(1px)}
+  .setting-row{display:flex; align-items:center; justify-content:space-between; gap:14px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:11px; padding:12px 14px; margin-bottom:16px}
+  .setting-name{font-size:.98rem; color:var(--ink)}
+  .setting-sub{font-size:.8rem; color:var(--ink-faint); margin-top:2px; line-height:1.35}
+  .toggle{flex:none; width:48px; height:28px; border-radius:999px; border:1px solid var(--panel-edge); background:#221d29; position:relative; transition:background .2s, border-color .2s; padding:0}
+  .toggle .knob{position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:var(--ink-faint); transition:transform .2s, background .2s}
+  .toggle.on{background:rgba(224,169,74,.22); border-color:var(--ember-deep)}
+  .toggle.on .knob{transform:translateX(20px); background:var(--ember)}
+  .edit-field{margin-bottom:14px}
+  .edit-field label{display:block; font-family:var(--disp); font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ember-deep); margin-bottom:7px}
+
+  /* confirm */
+  .confirm-ov{align-items:center; padding:26px; z-index:70}
+  .confirm-box{width:100%; max-width:400px; background:var(--bg-2); border:1px solid var(--panel-edge); border-radius:16px; padding:22px; animation:pop .2s ease both}
+  @keyframes pop{from{transform:scale(.95); opacity:.4}to{transform:none; opacity:1}}
+  .confirm-msg{font-size:1.02rem; line-height:1.5; color:var(--ink); margin-bottom:20px}
+  .confirm-row{display:flex; gap:10px}
+  .confirm-cancel{flex:1; border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink); border-radius:11px; padding:12px; font-weight:600}
+  .confirm-yes{flex:1; border:none; border-radius:11px; padding:12px; font-family:var(--disp); font-weight:700; font-size:1.05rem; color:#241a08; background:linear-gradient(180deg,#f0c766,#d49a37)}
+  .confirm-yes.danger{color:#fff; background:linear-gradient(180deg,#c8574f,#9c2f2b)}
+  .confirm-cancel:active,.confirm-yes:active{transform:translateY(1px)}
+
+  .death{position:fixed; inset:0; z-index:60; background:radial-gradient(60% 60% at 50% 40%, rgba(40,10,10,.5), rgba(4,4,6,.94)); backdrop-filter:blur(6px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; animation:fadein 1.4s ease both}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .death h2{font-family:var(--disp); font-weight:800; font-size:clamp(40px,15vw,80px); margin:0; color:var(--crimson); text-shadow:0 0 30px rgba(193,75,69,.4)}
+  .death p{color:var(--ink-dim); font-style:italic; max-width:30ch; margin:12px 0 28px}
+  .death button{border:1px solid var(--ember-deep); background:rgba(224,169,74,.08); color:var(--ember); border-radius:12px; padding:14px 28px; font-family:var(--disp); font-weight:700; font-size:1.15rem}
+  .err-note{background:rgba(193,75,69,.1); border:1px solid var(--crimson-deep); color:#e6b3b0; border-radius:11px; padding:12px 15px; font-size:.92rem; margin:10px 0; line-height:1.5}
+  .retry-btn{margin-top:8px; border:1px solid var(--crimson-deep); background:transparent; color:var(--crimson); border-radius:8px; padding:7px 15px; font-size:.88rem; font-weight:600}
+
+  .lenpick{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
+  .lenpick button{background:var(--panel); border:1px solid var(--panel-edge); border-radius:11px; padding:11px 6px; color:var(--ink); font-family:var(--disp); font-weight:600; font-size:.98rem; display:flex; flex-direction:column; align-items:center; gap:2px; transition:border-color .16s, background .16s}
+  .lenpick button small{font-family:var(--body); font-weight:400; font-size:.7rem; color:var(--ink-faint)}
+  .lenpick button[aria-pressed="true"]{border-color:var(--ember); background:linear-gradient(180deg,rgba(224,169,74,.10),rgba(224,169,74,.02)); box-shadow:0 0 0 1px var(--ember) inset}
+  .tale-done{font-family:var(--body); font-weight:400; font-style:italic; font-size:.78rem; color:var(--ember); margin-left:6px}
+  .finale{position:fixed; inset:0; z-index:60; background:radial-gradient(60% 60% at 50% 40%, rgba(40,30,10,.55), rgba(6,5,3,.95)); backdrop-filter:blur(6px); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; animation:fadein 1.6s ease both}
+  .finale h2{font-family:var(--disp); font-weight:800; font-size:clamp(44px,15vw,84px); margin:0; background:linear-gradient(180deg,#f4e6c4,#d79f3f 78%,#9c6f24); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 0 30px rgba(224,169,74,.35))}
+  .finale p{color:var(--ink-dim); font-style:italic; max-width:32ch; margin:14px 0 28px}
+  .finale-primary{border:none; border-radius:12px; padding:14px 28px; font-family:var(--disp); font-weight:700; font-size:1.2rem; color:#241a08; background:linear-gradient(180deg,#f0c766,#d49a37); margin-bottom:12px}
+  .finale-ghost{border:1px solid var(--panel-edge); background:transparent; color:var(--ink-dim); border-radius:12px; padding:11px 22px; font-size:.95rem}
+  .savewarn{position:fixed; top:calc(var(--safe-t) + 8px); left:50%; transform:translateX(-50%); z-index:80; max-width:92%; display:flex; gap:10px; align-items:center; background:#2a1c12; border:1px solid var(--crimson-deep); color:#e6c9a0; border-radius:10px; padding:9px 12px; font-size:.85rem; box-shadow:0 12px 40px -14px rgba(0,0,0,.8)}
+  .savewarn-x{flex:none; border:none; background:transparent; color:var(--ink-dim); font-size:.95rem}
+  .storypanel{background:var(--panel); border:1px solid var(--panel-edge); border-radius:11px; padding:11px 14px; margin-bottom:18px}
+  .sp-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .sp-phase{font-family:var(--disp); font-weight:700; font-size:1.02rem; color:var(--ink)}
+  .sp-count{font-size:.8rem; color:var(--ember); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .sp-bar{height:6px; border-radius:3px; background:#221d29; margin:9px 0 7px; overflow:hidden}
+  .sp-bar > i{display:block; height:100%; border-radius:3px; background:linear-gradient(90deg,var(--ember-deep),var(--ember)); transition:width .4s}
+  .sp-sub{font-size:.78rem; color:var(--ink-faint); line-height:1.4}
+  @media (min-width:620px){ .classes{grid-template-columns:1fr 1fr} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="create">
+    <svg class="lantern" viewBox="0 0 40 40" fill="none">
+      <path d="M14 6h12M20 6v3" stroke="#d49a37" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 11h16l-2 20H14L12 11z" stroke="#d49a37" stroke-width="2" stroke-linejoin="round"/>
+      <ellipse cx="20" cy="21" rx="4.5" ry="6" fill="#f0c766"/>
+      <ellipse cx="20" cy="22" rx="2" ry="3.4" fill="#fff6df"/>
+    </svg>
+    <h1 class="title">Solo&nbsp;Quest</h1>
+    <p class="tagline">One hero. One die. A story that answers back.</p>
+
+    <div id="talesList" class="hidden"></div>
+
+    <div id="forgeDivider" class="divider-row hidden"><span>Forge a new hero</span></div>
+
+    <div class="field-label">Name your hero</div>
+    <div class="input-row">
+      <input class="name-input" id="heroName" maxlength="32" placeholder="e.g. Ysolde of the Ashen Vale" autocomplete="off">
+      <button class="dice-mini" id="nameDice" title="Random name" type="button">&#127922;</button>
+    </div>
+
+    <div class="field-label">Choose a path</div>
+    <div class="classes" id="classGrid"></div>
+
+    <div class="field-label">Appearance <span class="opt">optional</span></div>
+    <div class="input-row">
+      <input class="name-input" id="heroLook" maxlength="120" placeholder="A short description of how you look" autocomplete="off">
+      <button class="dice-mini" id="lookDice" title="Random appearance" type="button">&#127922;</button>
+    </div>
+
+    <div class="field-label">A defining trait <span class="opt">optional</span></div>
+    <div class="input-row">
+      <input class="name-input" id="heroTrait" maxlength="120" placeholder="Your temperament, a quirk, a secret" autocomplete="off">
+      <button class="dice-mini" id="traitDice" title="Random trait" type="button">&#127922;</button>
+    </div>
+
+    <div class="field-label">A notable feat <span class="opt">optional</span></div>
+    <select class="feat-select" id="heroFeat"></select>
+    <div class="feat-desc" id="featDesc"></div>
+
+    <div class="field-label">Story length</div>
+    <div class="lenpick" id="lenPick">
+      <button type="button" data-len="oneshot" aria-pressed="false">One-shot<small>~15 scenes</small></button>
+      <button type="button" data-len="standard" aria-pressed="true">Standard<small>~30 scenes</small></button>
+      <button type="button" data-len="campaign" aria-pressed="false">Campaign<small>open-ended</small></button>
+    </div>
+
+    <button class="begin" id="beginBtn" disabled>Begin the tale</button>
+    <p class="create-note">Narrated live by Claude through your own API key. Combat is grounded in the open D&amp;D 5e SRD.</p>
+    <p class="credit">Includes material from the <a href="https://dnd.wizards.com/resources/systems-reference-document" target="_blank" rel="noopener">System Reference Document 5.1</a> by Wizards of the Coast, licensed under <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" rel="noopener">CC-BY-4.0</a>.</p>
+  </section>
+
+  <section id="play" class="hidden">
+    <div class="hud">
+      <div class="hud-row">
+        <div class="hud-id" id="hudId">
+          <div class="hud-name" id="hudName">Hero</div>
+          <div class="hud-sub" id="hudSub">Level 1</div>
+        </div>
+        <button class="menu-btn" id="sheetBtn" title="Character sheet">&#9776;</button>
+      </div>
+      <div class="meters" id="meters">
+        <div class="meter hp" id="hpMeter">
+          <div class="m-top"><span class="m-lab">Health</span><span class="m-val" id="hpVal">10/10</span></div>
+          <div class="bar"><i class="hpfill" id="hpFill" style="width:100%"></i></div>
+        </div>
+        <div class="meter xp">
+          <div class="m-top"><span class="m-lab">Exp</span><span class="m-val" id="xpVal">0</span></div>
+          <div class="bar"><i class="xpfill" id="xpFill" style="width:0%"></i></div>
+        </div>
+        <div class="meter gold">
+          <div class="m-top"><span class="m-lab">Gold</span><span class="m-val" id="goldVal">0</span></div>
+          <div class="bar"><i class="xpfill" style="width:100%;opacity:.25"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="story" id="story"></div>
+    <div class="dock" id="dock"></div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* =====================================================================
+   CONFIG  --  edit these two lines after you deploy your Worker
+   ---------------------------------------------------------------------
+   DM_ENDPOINT : the URL of your Cloudflare Worker (or /api/dm if you host
+                 the proxy on the same origin, e.g. Cloudflare Pages Functions).
+   MODEL       : any current Claude model id. Check the latest at
+                 https://docs.claude.com/en/docs/about-claude/models
+===================================================================== */
+const DM_ENDPOINT = "https://YOUR-WORKER.workers.dev";
+const MODEL = "claude-sonnet-5";
+const MAX_TOKENS = 1200;
+
+/* ---------------- data ---------------- */
+const ABIL = { Strength:"str", Dexterity:"dex", Constitution:"con", Intelligence:"int", Wisdom:"wis", Charisma:"cha" };
+const ABBR = { str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA" };
+const ORDER = ["str","dex","con","int","wis","cha"];
+
+const CLASSES = {
+  Barbarian:{emblem:"\uD83E\uDE93", hitDie:12, ac:15, blurb:"A furious force of nature. Immense stamina, brutal in a rage.",
+    ab:{str:16,con:15,dex:14,wis:12,cha:10,int:8}, gear:["Greataxe","Two handaxes","Explorer's pack","4 javelins"]},
+  Bard:{emblem:"\uD83C\uDFB5", hitDie:8, ac:13, blurb:"A silver-tongued performer whose words weave real magic.",
+    ab:{cha:16,dex:14,con:13,int:12,wis:10,str:9}, gear:["Rapier","Lute","Leather armor","Diplomat's pack","Dagger"]},
+  Cleric:{emblem:"\u2728", hitDie:8, ac:15, blurb:"A vessel of divine power. Mends wounds, smites the wicked, holds the line.",
+    ab:{wis:16,con:14,str:13,cha:12,int:10,dex:9}, gear:["Warhammer","Steel shield","Chain shirt","Holy symbol","Healer's kit"]},
+  Druid:{emblem:"\uD83C\uDF43", hitDie:8, ac:13, blurb:"A keeper of the wild who borrows the shapes and fury of beasts.",
+    ab:{wis:16,con:14,dex:13,int:12,cha:10,str:9}, gear:["Wooden shield","Scimitar","Leather armor","Druidic focus","Herbalism kit"]},
+  Fighter:{emblem:"\u2694\uFE0F", hitDie:10, ac:16, blurb:"A disciplined warrior of steel and grit. Hits hard, endures more.",
+    ab:{str:16,con:15,dex:13,wis:11,cha:10,int:9}, gear:["Longsword","Oak shield","Chain mail","Crossbow","Traveler's pack"]},
+  Monk:{emblem:"\uD83D\uDC4A", hitDie:8, ac:15, blurb:"A martial artist channeling inner energy through fist and focus.",
+    ab:{dex:16,wis:15,con:13,str:11,int:10,cha:9}, gear:["Shortsword","10 darts","Explorer's pack","Simple robes"]},
+  Paladin:{emblem:"\uD83D\uDEE1\uFE0F", hitDie:10, ac:18, blurb:"An oathbound knight of radiant conviction. Armored, righteous, unyielding.",
+    ab:{str:16,cha:15,con:14,wis:11,dex:10,int:9}, gear:["Longsword","Shield","Plate armor","Holy symbol","5 javelins"]},
+  Ranger:{emblem:"\uD83C\uDFF9", hitDie:10, ac:14, blurb:"A hunter of the wilds. Deadly at range, at home where roads end.",
+    ab:{dex:16,wis:14,con:13,str:11,int:10,cha:9}, gear:["Longbow","Quiver (20)","Two shortswords","Leather armor","Trail rations"]},
+  Rogue:{emblem:"\uD83D\uDDE1\uFE0F", hitDie:8, ac:14, blurb:"A shadow with a blade. Thrives on cunning, stealth and a well-timed strike.",
+    ab:{dex:16,con:13,cha:14,int:12,wis:11,str:9}, gear:["Twin daggers","Leather armor","Thieves' tools","Grappling hook","Smoke pellet"]},
+  Sorcerer:{emblem:"\uD83D\uDD25", hitDie:6, ac:12, blurb:"Raw magic in mortal form, power surging from the blood itself.",
+    ab:{cha:16,con:14,dex:13,int:11,wis:10,str:8}, gear:["Two daggers","Arcane focus (crystal)","Explorer's pack","Traveler's robes"]},
+  Warlock:{emblem:"\uD83D\uDC41\uFE0F", hitDie:8, ac:13, blurb:"A pact-bound conduit for an otherworldly patron's eldritch might.",
+    ab:{cha:16,con:14,dex:13,wis:12,int:11,str:9}, gear:["Light crossbow","Two daggers","Leather armor","Arcane focus","Grimoire of the pact"]},
+  Wizard:{emblem:"\uD83D\uDCD6", hitDie:6, ac:12, blurb:"A scholar of the arcane. Fragile of body, devastating with the right words.",
+    ab:{int:16,dex:14,con:13,wis:12,cha:10,str:8}, gear:["Oaken staff","Spellbook","Component pouch","Robes","Vial of ink"]},
+};
+
+const FEATS = [
+  {name:"", desc:"No special feat \u2014 a hero forged by deeds alone."},
+  {name:"Alert", desc:"Seldom caught off guard \u2014 you sense danger before it strikes."},
+  {name:"Lucky", desc:"Fate bends your way in rare, crucial moments."},
+  {name:"Tough", desc:"Hardier than most \u2014 you can take a real beating. (+4 max HP)"},
+  {name:"Keen Mind", desc:"You forget nothing; directions, faces and details stay razor-sharp."},
+  {name:"Actor", desc:"A gifted mimic and liar; you slip into other roles with ease."},
+  {name:"Skulker", desc:"You move unseen and strike from the dark."},
+  {name:"Healer", desc:"Skilled with wounds and field remedies."},
+  {name:"Magic Initiate", desc:"You've learned a fragment of arcane power beyond your path."},
+  {name:"Linguist", desc:"You read and speak many tongues, and craft clever ciphers."},
+  {name:"Charger", desc:"You hit hardest when you close the distance in a rush."},
+];
+const FEAT_MAP = Object.fromEntries(FEATS.map(f=>[f.name,f.desc]));
+
+const NAMES_FIRST = ["Ysolde","Corvin","Brannoc","Elowen","Thorne","Marisol","Kaelen","Draven","Seraphine","Alaric","Nyx","Rowan","Isolde","Garrick","Liora","Fenwick","Sable","Oren","Vesper","Talia","Bram","Sorcha","Dain","Elias","Mira","Cassius","Wren","Halvard","Perrin","Sylas","Tamsin","Ulric","Verena","Wystan","Yorick","Zephyra","Aeryn","Cael","Mordecai","Ravenna","Emeric","Isadora","Faelen","Quill","Bexley","Ondine","Sedric","Wyndham"];
+const NAMES_EPITHET = ["of the Ashen Vale","Blackbriar","the Wanderer","Stormcrow","of Duskmere","Ironwood","the Unbroken","Nightingale","Ashford","of the Hollow","Ravenshade","the Quick","Thornfield","of Emberlyn","Frostmere","the Grey","Vane","of Larkspur","Coldwater","the Twice-Lost","Marlow","of the Marches"];
+const LOOKS = ["a weathered face and a jagged scar cutting one brow","sharp green eyes and a mane of copper hair","tall and gaunt, wrapped in road-worn grey","close-cropped dark hair and ink-stained fingers","broad-shouldered with a plaited beard and iron rings","pale and freckled, with a restless, crooked grin","silver-eyed beneath a deep hood, moving without sound","sun-browned skin, a shaved head, and countless small tattoos","small and wiry, quick of hand and quicker of eye","a soft face that hides a soldier's cold stare","auburn braids threaded with beads and a chipped tooth","one clouded blind eye and a voice like gravel"];
+const TRAITS = ["quick to laugh, slow to trust","haunted by a past I won't speak of","reckless whenever there's coin involved","loyal to a fault, once loyalty is earned","curious to the point of trouble","calm even when the world burns","sharp-tongued and far too proud","soft-hearted beneath a hard shell","superstitious, always tracing old wards","hungry for a name that outlives me","forever bargaining, never quite honest","kind to strangers, ruthless to liars"];
+
+const INDEX_KEY = "solo-quest-index-v2";
+const TALE_PREFIX = "solo-quest-tale-";
+const V1_KEY = "solo-quest-save-v1";
+
+/* ---------------- state ---------------- */
+let state = null;
+let SRD = null;              // loaded monster array
+let SRD_INDEX = null;        // [{re, mon}] for matching
+let srdOn = (function(){ try{ return localStorage.getItem("solo-quest-srd")!=="0"; }catch(e){ return true; } })();
+let selectedClass = null, selectedLen = "standard";
+let busy = false, abortCtl = null;
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const el = (tag, cls, html) => { const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; };
+const mod = score => Math.floor((score-10)/2);
+const signed = n => (n>=0?"+":"")+n;
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const xpForLevel = lv => lv*100;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const genId = () => "t"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function relTime(ts){ if(!ts) return ""; const s=(Date.now()-ts)/1000; if(s<60) return "just now"; const m=s/60; if(m<60) return Math.floor(m)+"m ago"; const h=m/60; if(h<24) return Math.floor(h)+"h ago"; const d=h/24; if(d<7) return Math.floor(d)+"d ago"; return new Date(ts).toLocaleDateString(); }
+
+function genName(){ let n=pick(NAMES_FIRST); if(Math.random()<0.6){ const e=pick(NAMES_EPITHET); n += e.startsWith("of ")||e.startsWith("the ") ? " "+e : " "+e; } return n; }
+
+/* ---------------- SRD monster grounding ---------------- */
+async function loadSRD(){
+  if(SRD) return SRD;
+  try{
+    const r = await fetch("data/srd-monsters.json"); SRD = await r.json();
+    SRD_INDEX = SRD.map(m=>{
+      const name = m.n;
+      // common short animal names need whole-word matching; all use word boundaries
+      const re = new RegExp("\\b" + name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + "s?\\b","i");
+      return { re, mon:m, len:name.length };
+    }).sort((a,b)=>b.len-a.len); // longer (more specific) names first
+  }catch(e){ SRD = []; SRD_INDEX = []; }
+  return SRD;
+}
+function statBlock(m){
+  const L=[];
+  L.push(`${m.n} \u2014 ${m.meta||""}`.trim());
+  const line2=[]; if(m.ac!=null)line2.push("AC "+m.ac); if(m.hp!=null)line2.push("HP "+m.hp+(m.hd?` (${m.hd})`:"")); if(m.spd)line2.push("Speed "+m.spd); if(m.cr!=null)line2.push("CR "+m.cr+(m.xp?` (${m.xp} XP)`:"")); L.push(line2.join(" | "));
+  L.push(`STR ${m.str} DEX ${m.dex} CON ${m.con} INT ${m.int} WIS ${m.wis} CHA ${m.cha}`);
+  const extras=[]; if(m.save)extras.push("Saves "+m.save); if(m.skills)extras.push("Skills "+m.skills); if(m.res)extras.push("Resist "+m.res); if(m.imm)extras.push("Immune "+m.imm); if(m.vuln)extras.push("Vulnerable "+m.vuln); if(m.cimm)extras.push("Cond. immune "+m.cimm);
+  if(extras.length) L.push(extras.join(" | "));
+  const sl=[]; if(m.senses)sl.push("Senses "+m.senses); if(m.lang)sl.push("Languages "+m.lang); if(sl.length) L.push(sl.join(" | "));
+  const sec=(label,arr)=>{ if(arr&&arr.length) L.push(label+": "+arr.map(a=>`${a.n}. ${a.d}`).join(" ")); };
+  sec("Traits",m.traits); sec("Actions",m.actions); sec("Legendary Actions",m.legendary);
+  return L.join("\n");
+}
+function srdBlock(){
+  if(!srdOn || !SRD_INDEX || !state) return "";
+  // scan the last ~2000 chars of story context for monster names
+  const recent = state.turns.slice(-4).map(t=>t.content).join(" ").slice(-2400);
+  const found=[]; const seen=new Set();
+  for(const {re,mon} of SRD_INDEX){
+    if(found.length>=3) break;
+    if(seen.has(mon.n)) continue;
+    if(re.test(recent)){ found.push(mon); seen.add(mon.n); }
+  }
+  if(!found.length) return "";
+  return "\n\nSRD REFERENCE (official 5e stat blocks for creatures currently in play \u2014 use these exact numbers when they act, attack, or take damage; do not invent different stats for them):\n" +
+    found.map(statBlock).join("\n\n");
+}
+
+/* ---------------- DM transport (streaming via your Worker) ---------------- */
+async function streamDM(system, messages, opts){
+  opts = opts || {};
+  const res = await fetch(DM_ENDPOINT, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ system, messages, model:MODEL, max_tokens:MAX_TOKENS, stream:true }),
+    signal: opts.signal
+  });
+  if(!res.ok || !res.body){
+    let detail=""; try{ const j=await res.json(); detail=(j.error&&(j.error.message||j.error))||j.detail||""; }catch(e){}
+    const err=new Error(detail||("HTTP "+res.status)); err.status=res.status; throw err;
+  }
+  const reader=res.body.getReader(), dec=new TextDecoder(); let buf="", full="";
+  while(true){
+    const {value,done}=await reader.read(); if(done) break;
+    buf+=dec.decode(value,{stream:true});
+    let i;
+    while((i=buf.indexOf("\n\n"))>=0){
+      const chunk=buf.slice(0,i); buf=buf.slice(i+2);
+      let dataStr="";
+      for(const line of chunk.split("\n")){ if(line.startsWith("data:")) dataStr+=line.slice(5).trim(); }
+      if(!dataStr || dataStr==="[DONE]") continue;
+      let evt; try{ evt=JSON.parse(dataStr); }catch(e){ continue; }
+      if(evt.type==="content_block_delta" && evt.delta && evt.delta.type==="text_delta"){ full+=evt.delta.text; if(opts.onText) opts.onText(full); }
+      else if(evt.type==="message_delta" && evt.delta && evt.delta.stop_reason){ /* end */ }
+      else if(evt.type==="error"){ const e=new Error(evt.error&&evt.error.message||"stream error"); e.text=full; throw e; }
+    }
+  }
+  return full;
+}
+
+/* ---------------- storage ----------------
+   Index (small summaries) lives in localStorage for instant start-screen render.
+   Full tale bodies live in IndexedDB (large quota, async), with a localStorage
+   fallback if IndexedDB is unavailable (e.g. private mode). */
+function readIndex(){ try{ return JSON.parse(localStorage.getItem(INDEX_KEY)) || []; }catch(e){ return []; } }
+function writeIndex(a){ try{ localStorage.setItem(INDEX_KEY, JSON.stringify(a)); }catch(e){} }
+function indexEntry(s){ return { id:s.id, name:s.hero.name, className:s.hero.className, emblem:s.hero.emblem, level:s.hero.level, dead:s.hero.hp<=0, complete:!!s.arcResolved, updated:Date.now() }; }
+function upsertIndex(s){ const idx=readIndex().filter(t=>t.id!==s.id); idx.unshift(indexEntry(s)); writeIndex(idx); }
+
+let _db=null, _dbTried=false;
+function idb(){
+  if(_dbTried) return Promise.resolve(_db);
+  return new Promise(res=>{
+    _dbTried=true;
+    try{
+      const req=indexedDB.open("solo-quest",1);
+      req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains("tales")) db.createObjectStore("tales",{keyPath:"id"}); };
+      req.onsuccess=e=>{ _db=e.target.result; res(_db); };
+      req.onerror=()=>{ _db=null; res(null); };
+    }catch(e){ _db=null; res(null); }
+  });
+}
+function idbReq(r){ return new Promise((res,rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function putTale(s){
+  const db=await idb();
+  if(db){ const tx=db.transaction("tales","readwrite"); await idbReq(tx.objectStore("tales").put(s)); return; }
+  localStorage.setItem(TALE_PREFIX+s.id, JSON.stringify(s)); // fallback
+}
+async function getTale(id){
+  const db=await idb();
+  if(db){ const tx=db.transaction("tales","readonly"); return await idbReq(tx.objectStore("tales").get(id)); }
+  try{ return JSON.parse(localStorage.getItem(TALE_PREFIX+id)); }catch(e){ return null; }
+}
+async function delTaleBody(id){
+  const db=await idb();
+  if(db){ try{ const tx=db.transaction("tales","readwrite"); await idbReq(tx.objectStore("tales").delete(id)); }catch(e){} }
+  try{ localStorage.removeItem(TALE_PREFIX+id); }catch(e){}
+}
+async function save(){ if(!state) return; try{ await putTale(state); upsertIndex(state); }catch(e){ showSaveWarning(); } }
+function deleteTale(id){ delTaleBody(id); writeIndex(readIndex().filter(t=>t.id!==id)); }
+async function loadTale(id){ return await getTale(id); }
+async function migrateStorage(){
+  // old single-slot save -> a tale
+  try{
+    const raw=localStorage.getItem(V1_KEY);
+    if(raw){ const s=JSON.parse(raw); if(s&&s.hero&&s.log){ s.id=genId(); await putTale(s); upsertIndex(s); } localStorage.removeItem(V1_KEY); }
+  }catch(e){}
+  // move any localStorage tale bodies into IndexedDB
+  try{
+    const db=await idb();
+    if(db){
+      const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.indexOf(TALE_PREFIX)===0) keys.push(k); }
+      for(const k of keys){ try{ const s=JSON.parse(localStorage.getItem(k)); if(s&&s.id){ await putTale(s); localStorage.removeItem(k); } }catch(e){} }
+    }
+  }catch(e){}
+}
+
+/* =====================================================================
+   START SCREEN
+===================================================================== */
+function buildClassGrid(){
+  const grid = $("classGrid"); grid.innerHTML = "";
+  Object.entries(CLASSES).forEach(([name,c])=>{
+    const b = el("button","class-card"); b.type="button"; b.setAttribute("aria-pressed","false");
+    b.innerHTML = `<span class="class-emblem">${c.emblem}</span>
+      <span style="min-width:0">
+        <span class="class-name">${name}</span>
+        <span class="class-blurb">${c.blurb}</span>
+        <span class="class-stats">d${c.hitDie} hit die \u00B7 AC ${c.ac} \u00B7 ${ABBR[topAbility(c.ab)]} focus</span>
+      </span>`;
+    b.onclick = ()=>{ selectedClass = name; [...grid.children].forEach(ch=>ch.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); refreshBegin(); };
+    grid.appendChild(b);
+  });
+}
+function topAbility(ab){ return ORDER.reduce((a,b)=> ab[b]>ab[a]?b:a, "str"); }
+function refreshBegin(){ $("beginBtn").disabled = !(selectedClass && $("heroName").value.trim().length>0); }
+
+function featOptions(sel){ return FEATS.map(f=>`<option value="${esc(f.name)}"${f.name===sel?" selected":""}>${f.name?esc(f.name):"None"}</option>`).join(""); }
+function buildFeatSelect(){ const s=$("heroFeat"); s.innerHTML=featOptions(""); s.onchange=()=>{ $("featDesc").textContent = FEAT_MAP[s.value]||""; }; $("featDesc").textContent = FEAT_MAP[""]; }
+
+function renderTales(){
+  const idx = readIndex(); const box = $("talesList");
+  if(!idx.length){ box.classList.add("hidden"); box.innerHTML=""; $("forgeDivider").classList.add("hidden"); return; }
+  box.classList.remove("hidden"); $("forgeDivider").classList.remove("hidden");
+  box.innerHTML = `<div class="field-label">Your tales</div>`;
+  idx.forEach(t=>{
+    const card = el("div","tale-card"+(t.dead?" dead":""));
+    card.innerHTML = `<span class="tale-emblem">${t.emblem||"\uD83C\uDFB2"}</span>
+      <span class="tale-meta">
+        <span class="tale-name">${esc(t.name)}${t.dead?' <span class="tale-fallen">fallen</span>':(t.complete?' <span class="tale-done">complete</span>':'')}</span>
+        <span class="tale-sub">${esc(t.className)} \u00B7 Level ${t.level} \u00B7 ${relTime(t.updated)}</span>
+      </span>`;
+    const actions = el("span","tale-actions");
+    if(!t.dead){ const cont = el("button","tale-cont","Continue \u203A"); cont.onclick=()=>continueTale(t.id); actions.appendChild(cont); }
+    const del = el("button","tale-del","\uD83D\uDDD1"); del.title="Delete tale";
+    del.onclick=()=>confirmDialog(`Delete ${t.name}'s tale for good? This can't be undone.`,{label:"Delete",danger:true},()=>{ deleteTale(t.id); renderTales(); });
+    actions.appendChild(del); card.appendChild(actions); box.appendChild(card);
+  });
+}
+
+async function continueTale(id){
+  const s = await loadTale(id); if(!s){ renderTales(); return; }
+  state = s;
+  if(state.beat==null) state.beat = state.log.filter(e=>e.type==="dm").length;
+  if(!state.arcLength) state.arcLength = "standard";
+  enterPlay(); renderAll(); rebuildStory(); renderDock();
+  if(state.hero.hp<=0) die(); else if(state.arcResolved) showFinale();
+}
+
+/* create-screen wiring */
+$("heroName").addEventListener("input", refreshBegin);
+$("beginBtn").addEventListener("click", startNewGame);
+$("nameDice").addEventListener("click", ()=>{ $("heroName").value = genName(); refreshBegin(); });
+$("lookDice").addEventListener("click", ()=>{ $("heroLook").value = pick(LOOKS); });
+$("traitDice").addEventListener("click", ()=>{ $("heroTrait").value = pick(TRAITS); });
+[...$("lenPick").children].forEach(b=>b.addEventListener("click",()=>{ selectedLen=b.dataset.len; [...$("lenPick").children].forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); }));
+
+/* =====================================================================
+   GAME LIFECYCLE
+===================================================================== */
+function startNewGame(){
+  const name = $("heroName").value.trim() || "The Wanderer";
+  const cls = CLASSES[selectedClass];
+  const conMod = mod(cls.ab.con);
+  const feat = $("heroFeat").value || "";
+  let maxHp = cls.hitDie + conMod;
+  if(feat==="Tough") maxHp += 4;
+  state = {
+    id: genId(),
+    hero:{
+      name, className:selectedClass, emblem:cls.emblem, level:1,
+      ab:{...cls.ab}, hitDie:cls.hitDie, ac:cls.ac,
+      maxHp, hp:maxHp, gold:15, xp:0,
+      inventory:[...cls.gear], conditions:[],
+      appearance: $("heroLook").value.trim(),
+      trait: $("heroTrait").value.trim(),
+      feat
+    },
+    scene:"The Beginning", combat:false, log:[], turns:[], pending:null,
+    arcLength: selectedLen, beat:0, chapter:1, arcResolved:false,
+  };
+  enterPlay(); renderAll(); $("story").innerHTML="";
+  const kickoff = "Begin the adventure now. Open with a vivid, atmospheric hook that drops me directly into an intriguing situation \u2014 a place, a moment, a hint of stakes \u2014 and end on a concrete decision I must make. Do not summarize my character sheet back to me; just start the story.";
+  takeTurn(kickoff, {hideAsPlayer:true});
+}
+
+function enterPlay(){ $("create").classList.add("hidden"); $("play").classList.remove("hidden"); }
+function toStart(){ $("play").classList.add("hidden"); $("create").classList.remove("hidden"); renderTales(); window.scrollTo(0,0); }
+function leaveTale(){ closeSheet(); save(); state=null; toStart(); }
+
+/* =====================================================================
+   THE DUNGEON MASTER (sample)
+===================================================================== */
+function instruction(){
+  const h = state.hero;
+  const mods = ORDER.map(k=>`${ABBR[k]} ${h.ab[k]} (${signed(mod(h.ab[k]))})`).join(", ");
+  const sheet = {
+    name:h.name, class:h.className, level:h.level, hp:`${h.hp}/${h.maxHp}`, ac:h.ac, gold:h.gold, xp:h.xp,
+    abilities:mods, inventory:h.inventory, conditions:h.conditions.length?h.conditions:["none"]
+  };
+  let flavor = "";
+  if(h.appearance) flavor += `Appearance: ${h.appearance}. `;
+  if(h.trait) flavor += `Defining trait: ${h.trait}. `;
+  if(h.feat) flavor += `Notable feat: ${h.feat} (${FEAT_MAP[h.feat]||""}). `;
+  if(flavor) flavor = "\nCHARACTER FLAVOR (weave these in naturally where they fit; the feat can occasionally matter to outcomes): "+flavor;
+
+  return `You are the Game Master of a solo, single-player fantasy tabletop RPG in the spirit of Dungeons & Dragons. You run an immersive, reactive adventure for ONE hero \u2014 the player.
+
+THE HERO (current state \u2014 always obey these numbers):
+${JSON.stringify(sheet)}${flavor}
+Current scene: ${state.scene}. In combat: ${state.combat?"yes":"no"}.
+
+NARRATION RULES:
+- Write in second person ("you"), present tense. Vivid and sensory but tight: 2 to 4 short paragraphs, never more.
+- React to EXACTLY what the player just did. Never narrate the hero's own choices, words, or feelings for them; leave decisions to the player.
+- Keep the story moving with real stakes, consequences, memorable NPCs and places. Stay consistent with earlier events.
+- Never mention dice, stats, DCs, JSON, or rules inside the narration prose. Keep the machinery in the DATA block only.
+
+WHEN TO CALL FOR A ROLL:
+- If the player attempts something with an uncertain, interesting outcome (sneaking, persuading, deceiving, forcing something, climbing, attacking a foe, dodging, casting under pressure, recalling lore, etc.), DO NOT decide the result yourself. Instead request a d20 ability check in the DATA block: choose the fitting ability and a DC from 5 (trivial) to 20 (near-impossible); most are 10-15.
+- Do NOT request a roll for safe, trivial, or purely narrative actions (walking, chatting calmly, looking around a safe room).
+- After you request a roll, my next message will report the die, my modifier, the total, whether it beat the DC, and any natural 20 or natural 1. Narrate the outcome proportionally \u2014 a natural 20 is a triumphant surprise, a natural 1 a memorable disaster.
+- In combat, request attack rolls, describe what enemies do, and apply damage to me through effects.hp (negative numbers).
+
+CONSEQUENCES (effects):
+- Use effects to change my state: hp (negative = damage, positive = healing), gold, xp (award 10-50 when I overcome a real challenge), addItems / removeItems (short item names), conditions (an array to REPLACE my conditions, e.g. ["Poisoned"] or [] to clear).
+- Make choices matter: danger wounds me, loot enriches me, cleverness and courage earn xp.
+
+OUTPUT FORMAT \u2014 follow EXACTLY, every turn:
+1) The narration prose first.
+2) Then a line containing only: ===
+3) Then ONE minified JSON object and nothing after it:
+{"sceneTitle":"short scene name","combat":false,"roll":null,"choices":["do X","do Y","do Z"],"effects":null}
+- "roll" is null, OR an object {"ability":"Dexterity","dc":13,"reason":"why"}.
+- "effects" is null, OR an object like {"hp":-4,"gold":0,"xp":20,"addItems":["Rusted key"],"removeItems":[],"conditions":null}. Only include keys that change.
+- "choices": 2 to 4 short suggested actions I might take next. I can also type my own. If a roll is required, still offer a couple of choices for afterward.
+- "sceneTitle": a brief evocative name for the current location/situation.
+- "arc": normally "building". Set it to "resolved" ONLY on the turn you deliver the story's final resolution and the tale is complete.` + storyClock();
+}
+
+function buildSystem(){ return instruction() + srdBlock(); }
+function trimmedMessages(){
+  const convo = state.turns.slice();
+  const LIMIT = 60000; let total = 0; const kept = [];
+  for(let i=convo.length-1; i>=0; i--){ total += convo[i].content.length + 12; if(total>LIMIT && kept.length>=2) break; kept.unshift(convo[i]); }
+  // API requires the first message to be a user turn
+  while(kept.length && kept[0].role!=="user") kept.shift();
+  return kept;
+}
+
+async function takeTurn(playerText, opts){
+  opts = opts || {};
+  state.turns.push({ role:"user", content: playerText });
+  if(!opts.hideAsPlayer) addPlayerRef(state.turns.length-1);
+
+  busy = true; renderDock();
+  const dmEntry = addDmPlaceholder();
+  abortCtl = new AbortController();
+  let full = "";
+  try{
+    full = await streamDM(buildSystem(), trimmedMessages(), {
+      signal: abortCtl.signal,
+      onText:(t)=>{ full=t; dmEntry.body.innerHTML = proseHtml(narrationOf(t) || "\u2026"); scrollStory(); }
+    });
+  }catch(e){
+    busy=false; abortCtl=null;
+    if(e && (e.name==="AbortError" || e.code===20)){
+      const kept = narrationOf(e.text||full);
+      if(kept.trim()) dmEntry.body.innerHTML = proseHtml(kept); else dmEntry.wrap.remove();
+      state.turns.pop(); if(!opts.hideAsPlayer) removeLastPlayerDisplay();
+      renderDock(); save(); return;
+    }
+    dmEntry.wrap.remove(); state.turns.pop(); if(!opts.hideAsPlayer) removeLastPlayerDisplay();
+    showDMError(e, ()=>takeTurn(playerText, opts));
+    return;
+  }
+  busy=false; abortCtl=null;
+  const {narration, data} = splitResponse(full);
+  const shown = narration || "\u2026";
+  const info = applyData(data);
+  if(info.sceneChanged){
+    const div = el("div","scene-mark"); div.innerHTML = `<span>${esc(state.scene)}</span>`;
+    dmEntry.wrap.parentNode.insertBefore(div, dmEntry.wrap);
+    state.log.push({type:"scene", title:state.scene});
+  }
+  dmEntry.body.innerHTML = proseHtml(shown);
+  state.turns.push({ role:"assistant", content: shown });
+  state.log.push({type:"dm", t: state.turns.length-1});
+  state.beat = (state.beat||0) + 1;
+  renderAll(); renderDock(); scrollStory(); save();
+  if(state.arcResolved) showFinale();
+}
+
+function narrationOf(text){ const m=text.search(/\n\s*={3,}/); return (m===-1?text:text.slice(0,m)).trim(); }
+function splitResponse(full){
+  const m = full.search(/\n\s*={3,}/);
+  if(m===-1) return { narration: full.trim(), data:null };
+  const narration = full.slice(0,m).trim(); const rest = full.slice(m);
+  const a = rest.indexOf("{"), b = rest.lastIndexOf("}"); let data=null;
+  if(a!==-1 && b!==-1 && b>a){ try{ data=JSON.parse(rest.slice(a,b+1)); }catch(e){ data=null; } }
+  return { narration, data };
+}
+
+function applyData(data){
+  let sceneChanged=false;
+  if(!data){ state.pending = { choices:["Continue","Look around","Ready myself"], roll:null }; return {sceneChanged}; }
+  if(typeof data.sceneTitle==="string" && data.sceneTitle.trim() && data.sceneTitle!==state.scene){ state.scene=data.sceneTitle.trim(); sceneChanged=true; }
+  if(typeof data.combat==="boolean") state.combat = data.combat;
+  if(data.effects && typeof data.effects==="object") applyEffects(data.effects);
+  let roll = null;
+  if(data.roll && typeof data.roll==="object" && data.roll.ability){
+    const key = ABIL[data.roll.ability] || ABIL[cap(data.roll.ability)] || null;
+    if(key) roll = { ability:cap(data.roll.ability), key, dc:clampInt(data.roll.dc,5,25,12), reason:data.roll.reason||"" };
+  }
+  const choices = Array.isArray(data.choices) ? data.choices.filter(c=>typeof c==="string" && c.trim()).slice(0,4) : [];
+  state.pending = { choices, roll };
+  state.arcResolved = (data.arc==="resolved");
+  if(state.hero.hp<=0) die();
+  return {sceneChanged};
+}
+function cap(s){ s=String(s); return s.charAt(0).toUpperCase()+s.slice(1).toLowerCase(); }
+function clampInt(v,lo,hi,dflt){ v=parseInt(v,10); if(isNaN(v)) return dflt; return Math.max(lo,Math.min(hi,v)); }
+
+function applyEffects(fx){
+  const h = state.hero;
+  if(typeof fx.hp==="number" && fx.hp!==0){ h.hp=Math.max(0,Math.min(h.maxHp,h.hp+fx.hp)); flashHp(fx.hp<0?"dmg":"heal"); toast((fx.hp>0?"+":"")+fx.hp+" HP"); }
+  if(typeof fx.gold==="number" && fx.gold!==0){ h.gold=Math.max(0,h.gold+fx.gold); if(fx.gold>0) toast("+"+fx.gold+" gold"); }
+  if(typeof fx.xp==="number" && fx.xp>0){ h.xp+=fx.xp; toast("+"+fx.xp+" XP"); checkLevel(); }
+  if(Array.isArray(fx.addItems)) fx.addItems.forEach(it=>{ if(typeof it==="string" && it.trim()) h.inventory.push(it.trim()); });
+  if(Array.isArray(fx.removeItems)) fx.removeItems.forEach(it=>{ const i=h.inventory.findIndex(x=>x.toLowerCase()===String(it).toLowerCase()); if(i>=0) h.inventory.splice(i,1); });
+  if(Array.isArray(fx.conditions)) h.conditions = fx.conditions.filter(c=>typeof c==="string" && c.trim());
+}
+function checkLevel(){
+  const h = state.hero;
+  while(h.xp >= xpForLevel(h.level)){
+    h.xp -= xpForLevel(h.level); h.level++;
+    h.maxHp += Math.ceil(h.hitDie/2)+1 + Math.max(0,mod(h.ab.con));
+    h.hp = h.maxHp; toast("\u269C Level "+h.level+"!");
+  }
+}
+
+/* =====================================================================
+   DICE
+===================================================================== */
+function d20svg(num, cls){
+  return `<svg class="d20 ${cls||""}" width="46" height="46" viewBox="0 0 46 46">
+    <polygon points="23,3 41,14 41,32 23,43 5,32 5,14" fill="#1d1a24" stroke="#b7822f" stroke-width="1.6"/>
+    <polygon points="23,3 41,14 23,20 5,14" fill="rgba(224,169,74,.10)"/>
+    <polygon points="23,20 41,14 41,32 23,43 5,32 5,14" fill="none" stroke="rgba(224,169,74,.28)" stroke-width=".8"/>
+    <text x="23" y="27" text-anchor="middle" font-family="Grenze Gotisch, serif" font-weight="700" font-size="16" fill="#f0c766">${num}</text></svg>`;
+}
+function modFor(key){ return mod(state.hero.ab[key]); }
+function doRoll(rollDef, btn){
+  btn.disabled = true;
+  const dieEl = btn.querySelector(".d20");
+  const final = 1 + Math.floor(Math.random()*20);
+  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+  let ticks = reduce?0:12;
+  const spin = ()=>{
+    if(ticks>0){ dieEl.querySelector("text").textContent = 1+Math.floor(Math.random()*20); ticks--; setTimeout(spin, 40+(12-ticks)*7); }
+    else { dieEl.querySelector("text").textContent = final; setTimeout(()=>resolveRoll(rollDef, final), 260); }
+  };
+  if(reduce){ dieEl.querySelector("text").textContent=final; resolveRoll(rollDef, final); } else spin();
+}
+function resolveRoll(rollDef, die){
+  const m = modFor(rollDef.key), total = die+m, crit=die===20, fumble=die===1;
+  const success = crit ? true : fumble ? false : total>=rollDef.dc;
+  addRollSlip({ability:rollDef.ability, key:rollDef.key, dc:rollDef.dc, die, m, total, success, crit, fumble});
+  let verdict = success ? "Success" : "Failure";
+  if(crit) verdict = "Critical success (natural 20)";
+  if(fumble) verdict = "Critical failure (natural 1)";
+  const report = `I make a ${rollDef.ability} check${rollDef.reason?` to ${rollDef.reason}`:""}: I rolled a ${die} on the d20 ${signed(m)} (${ABBR[rollDef.key]}) = ${total} versus DC ${rollDef.dc}. Result: ${verdict}. Narrate what happens.`;
+  state.pending = null;
+  takeTurn(report, {hideAsPlayer:true});
+}
+
+/* =====================================================================
+   RENDER \u2014 story
+===================================================================== */
+function proseHtml(text){ return text.split(/\n\s*\n/).map(p=>`<p>${esc(p.trim()).replace(/\n/g,"<br>")}</p>`).join(""); }
+function scrollStory(){ const s=$("story"); s.scrollTop = s.scrollHeight; }
+function addPlayerRef(idx){ state.log.push({type:"player", t:idx}); const t=el("div","turn player"); t.innerHTML=`<span class="who">${esc(state.hero.name)}</span>${esc(state.turns[idx].content)}`; $("story").appendChild(t); scrollStory(); }
+function removeLastPlayerDisplay(){ for(let i=state.log.length-1;i>=0;i--){ if(state.log[i].type==="player"){ state.log.splice(i,1); break; } } const n=$("story").querySelectorAll(".turn.player"); if(n.length) n[n.length-1].remove(); }
+function addDmPlaceholder(){ const wrap=el("div","turn dm"); const body=el("div","body"); body.innerHTML=`<span class="thinking">The tale unfolds <i></i><i></i><i></i></span>`; wrap.appendChild(body); $("story").appendChild(wrap); scrollStory(); return {wrap, body}; }
+function addRollSlip(r){ state.log.push({type:"roll", r}); renderRollSlip(r); }
+function renderRollSlip(r){
+  const slip = el("div","roll-slip"+(r.crit?" crit":r.fumble?" fumble":""));
+  slip.innerHTML = `<span>${d20svg(r.die)}</span>
+    <span class="r-txt"><span class="r-head ${r.success?'r-succ':'r-fail'}">${r.crit?'Critical success!':r.fumble?'Critical failure!':(r.success?'Success':'Failure')}</span><br>
+    <span class="r-math">${r.ability}: ${r.die} ${signed(r.m)} = <b>${r.total}</b> vs DC ${r.dc}</span></span>`;
+  $("story").appendChild(slip); scrollStory();
+}
+function rebuildStory(){
+  const s = $("story"); s.innerHTML="";
+  state.log.forEach(e=>{
+    if(e.type==="scene"){ const m=el("div","scene-mark"); m.innerHTML=`<span>${esc(e.title)}</span>`; s.appendChild(m); }
+    else if(e.type==="player"){ const txt = e.t!=null ? ((state.turns[e.t]||{}).content||"") : (e.text||""); const t=el("div","turn player"); t.innerHTML=`<span class="who">${esc(state.hero.name)}</span>${esc(txt)}`; s.appendChild(t); }
+    else if(e.type==="dm"){ const txt = e.t!=null ? ((state.turns[e.t]||{}).content||"") : (e.text||""); const t=el("div","turn dm"); const b=el("div","body"); b.innerHTML=proseHtml(txt); t.appendChild(b); s.appendChild(t); }
+    else if(e.type==="roll"){ renderRollSlip(e.r); }
+  });
+  scrollStory();
+}
+
+/* =====================================================================
+   RENDER \u2014 HUD / dock
+===================================================================== */
+function renderAll(){
+  const h = state.hero;
+  $("hudName").textContent = `${h.emblem} ${h.name}`;
+  $("hudSub").innerHTML = `${h.className} \u00B7 Level ${h.level}` + (state.combat?` \u00B7 <span class="sw">\u2694 in combat</span>`:"") + (h.conditions.length?` \u00B7 ${h.conditions.map(esc).join(", ")}`:"");
+  $("hpVal").textContent = `${h.hp}/${h.maxHp}`;
+  $("hpFill").style.width = Math.max(0,Math.min(100, h.hp/h.maxHp*100))+"%";
+  $("goldVal").textContent = h.gold;
+  const need = xpForLevel(h.level);
+  $("xpVal").textContent = `${h.xp}/${need}`;
+  $("xpFill").style.width = Math.max(0,Math.min(100, h.xp/need*100))+"%";
+}
+function renderDock(){
+  const dock = $("dock"); dock.innerHTML="";
+  if(busy){ const w=el("div","stopwrap"); const b=el("button","stop-btn","\u2715 Stop the telling"); b.onclick=()=>{ if(abortCtl) abortCtl.abort(); }; w.appendChild(b); dock.appendChild(w); return; }
+  if(state.pending && state.pending.roll){ renderDicePanel(state.pending.roll); return; }
+  const p = state.pending || {};
+  if(p.choices && p.choices.length){
+    const chips = el("div","chips");
+    p.choices.forEach(c=>{ const chip=el("button","chip",esc(c)); chip.onclick=()=>{ if(busy) return; state.pending=null; takeTurn(c); }; chips.appendChild(chip); });
+    dock.appendChild(chips);
+  }
+  const comp = el("div","composer"); const ta=el("textarea"); ta.rows=1; ta.placeholder="What do you do?";
+  ta.addEventListener("input",()=>{ ta.style.height="auto"; ta.style.height=Math.min(120,ta.scrollHeight)+"px"; });
+  const send = el("button","send"); send.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12l15-7-5 15-3-6-7-2z" fill="currentColor"/></svg>`;
+  const fire = ()=>{ const v=ta.value.trim(); if(!v||busy) return; state.pending=null; takeTurn(v); };
+  send.onclick=fire; ta.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); fire(); } });
+  comp.appendChild(ta); comp.appendChild(send); dock.appendChild(comp);
+}
+function renderDicePanel(roll){
+  const dock = $("dock"); const m=modFor(roll.key); const panel=el("div","dicepanel");
+  panel.innerHTML = `${roll.reason?`<div class="dice-reason">${esc(roll.reason)}</div>`:""}
+    <div class="dice-call"><div class="dice-check">${roll.ability} check</div><div class="dice-dc">DC ${roll.dc}<small>to beat</small></div></div>`;
+  const btn = el("button","roll-btn"); btn.innerHTML=`${d20svg("?")}<span>Roll the d20</span>`; btn.onclick=()=>doRoll(roll,btn);
+  panel.appendChild(btn); panel.appendChild(el("div","modnote",`Your ${ABBR[roll.key]} modifier ${signed(m)} is added to the roll`));
+  dock.appendChild(panel);
+}
+
+/* =====================================================================
+   CHARACTER SHEET + EDIT
+===================================================================== */
+function openSheet(){
+  const h = state.hero;
+  const ov = el("div","overlay"); ov.id="sheetOverlay"; ov.onclick=e=>{ if(e.target===ov) closeSheet(); };
+  const sheet = el("div","sheet");
+  const abils = ORDER.map(k=>`<div class="ab"><div class="ab-lab">${ABBR[k]}</div><div class="ab-mod">${signed(mod(h.ab[k]))}</div><div class="ab-score">${h.ab[k]}</div></div>`).join("");
+  const inv = h.inventory.length ? `<ul class="inv-list">${h.inventory.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>` : `<div class="inv-empty">Your pack is empty.</div>`;
+  const conds = h.conditions.length ? `<div class="sec-lab">Conditions</div><div class="cond-row">${h.conditions.map(c=>`<span class="cond">${esc(c)}</span>`).join("")}</div>` : "";
+  const flavorRows = [];
+  flavorRows.push(h.appearance ? `<p class="fl-line"><b>Look</b><br>${esc(h.appearance)}</p>` : "");
+  flavorRows.push(h.trait ? `<p class="fl-line"><b>Trait</b><br>${esc(h.trait)}</p>` : "");
+  flavorRows.push(h.feat ? `<p class="fl-line"><b>Feat</b><br>${esc(h.feat)} \u2014 ${esc(FEAT_MAP[h.feat]||"")}</p>` : "");
+  const flavor = flavorRows.filter(Boolean).length ? `<div class="flavor">${flavorRows.filter(Boolean).join("")}</div>` : `<div class="flavor"><span class="fl-empty">No appearance or feats set yet. Tap Edit to add some flair.</span></div>`;
+  sheet.innerHTML = `
+    <div class="sheet-h"><div class="sheet-title">${h.emblem} ${esc(h.name)}</div><button class="x-btn" id="sheetX">\u2715</button></div>
+    <div class="sheet-sub">${h.className} \u00B7 Level ${h.level} \u00B7 AC ${h.ac} \u00B7 ${h.hp}/${h.maxHp} HP \u00B7 ${h.gold} gold</div>
+    <div class="sec-lab">Who you are <button class="edit-link" id="editBtn">\u270E Edit</button></div>
+    ${flavor}
+    ${storyPanel()}
+    <div class="sec-lab">Abilities</div>
+    <div class="abilities">${abils}</div>
+    ${conds}
+    <div class="sec-lab">Inventory</div>
+    ${inv}
+    <div class="sec-lab">Settings</div>
+    <div class="setting-row" id="srdRow">
+      <div><div class="setting-name">SRD monster grounding</div><div class="setting-sub">Feed the DM official 5e stat blocks for creatures in play</div></div>
+      <button class="toggle ${srdOn?'on':''}" id="srdToggle" role="switch" aria-checked="${srdOn}"><span class="knob"></span></button>
+    </div>
+    <div class="sheet-btns">
+      <button class="ghost-btn" id="windBtn">\u26A1 Wind toward an ending</button>
+      <button class="ghost-btn" id="leaveBtn">\u2190 Leave for your tales</button>
+      <button class="danger-btn" id="delBtn">Delete this tale</button>
+    </div>`;
+  ov.appendChild(sheet); document.body.appendChild(ov);
+  $("sheetX").onclick = closeSheet;
+  $("editBtn").onclick = openEdit;
+  $("srdToggle").onclick = ()=>{ srdOn=!srdOn; try{ localStorage.setItem("solo-quest-srd", srdOn?"1":"0"); }catch(e){} const b=$("srdToggle"); b.classList.toggle("on",srdOn); b.setAttribute("aria-checked",srdOn); };
+  $("leaveBtn").onclick = leaveTale;
+  $("windBtn").onclick = windDown;
+  $("delBtn").onclick = ()=>confirmDialog(`Delete ${h.name}'s tale for good? This can't be undone.`,{label:"Delete",danger:true},()=>{ closeSheet(); deleteTale(state.id); state=null; toStart(); });
+}
+function closeSheet(){ const o=$("sheetOverlay"); if(o) o.remove(); }
+
+function openEdit(){
+  const h = state.hero;
+  const ov = el("div","overlay"); ov.id="editOverlay"; ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const sheet = el("div","sheet");
+  sheet.innerHTML = `
+    <div class="sheet-h"><div class="sheet-title">Edit hero</div><button class="x-btn" id="editX">\u2715</button></div>
+    <div class="edit-field"><label>Name</label>
+      <div class="input-row"><input class="name-input" id="eName" maxlength="32" value="${esc(h.name)}"><button class="dice-mini" id="eNameD" type="button">\uD83C\uDFB2</button></div></div>
+    <div class="edit-field"><label>Appearance</label>
+      <div class="input-row"><input class="name-input" id="eLook" maxlength="120" value="${esc(h.appearance||"")}" placeholder="How you look"><button class="dice-mini" id="eLookD" type="button">\uD83C\uDFB2</button></div></div>
+    <div class="edit-field"><label>Defining trait</label>
+      <div class="input-row"><input class="name-input" id="eTrait" maxlength="120" value="${esc(h.trait||"")}" placeholder="Temperament, a quirk, a secret"><button class="dice-mini" id="eTraitD" type="button">\uD83C\uDFB2</button></div></div>
+    <div class="edit-field"><label>Notable feat</label>
+      <select class="feat-select" id="eFeat">${featOptions(h.feat||"")}</select>
+      <div class="feat-desc" id="eFeatDesc">${esc(FEAT_MAP[h.feat||""]||"")}</div></div>
+    <div class="sheet-btns"><button class="begin" id="eSave" style="margin-top:4px">Save changes</button></div>`;
+  ov.appendChild(sheet); document.body.appendChild(ov);
+  $("editX").onclick = ()=>ov.remove();
+  $("eNameD").onclick = ()=>{ $("eName").value = genName(); };
+  $("eLookD").onclick = ()=>{ $("eLook").value = pick(LOOKS); };
+  $("eTraitD").onclick = ()=>{ $("eTrait").value = pick(TRAITS); };
+  $("eFeat").onchange = ()=>{ $("eFeatDesc").textContent = FEAT_MAP[$("eFeat").value]||""; };
+  $("eSave").onclick = ()=>{
+    h.name = $("eName").value.trim() || h.name;
+    h.appearance = $("eLook").value.trim();
+    h.trait = $("eTrait").value.trim();
+    h.feat = $("eFeat").value || "";
+    ov.remove(); closeSheet(); renderAll(); save(); openSheet();
+  };
+}
+
+/* =====================================================================
+   CONFIRM DIALOG (replaces blocked native confirm)
+===================================================================== */
+function confirmDialog(message, opts, onYes){
+  opts = opts || {};
+  const ov = el("div","overlay confirm-ov"); ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  const box = el("div","confirm-box");
+  box.innerHTML = `<div class="confirm-msg">${esc(message)}</div>`;
+  const row = el("div","confirm-row");
+  const cancel = el("button","confirm-cancel", opts.cancelLabel||"Cancel"); cancel.onclick=()=>ov.remove();
+  const yes = el("button","confirm-yes"+(opts.danger?" danger":""), opts.label||"Confirm"); yes.onclick=()=>{ ov.remove(); if(onYes) onYes(); };
+  row.appendChild(cancel); row.appendChild(yes); box.appendChild(row); ov.appendChild(box); document.body.appendChild(ov);
+}
+
+/* =====================================================================
+   DEATH
+===================================================================== */
+/* ---------------- story pacing ---------------- */
+function arcStatus(){
+  const len=(state&&state.arcLength)||"standard";
+  const beat=(state&&state.beat)||0;
+  const chapter=(state&&state.chapter)||1;
+  if(len==="campaign") return {len, beat, chapter, campaign:true};
+  const target = len==="oneshot"?16:32;
+  const p=beat/target;
+  let phase;
+  if(p<0.18) phase="Act I \u00B7 Setup";
+  else if(p<0.5) phase="Act II \u00B7 Rising action";
+  else if(p<0.7) phase="Midpoint";
+  else if(p<0.9) phase="Act III \u00B7 Escalation";
+  else if(p<1.15) phase="Climax nears";
+  else phase="Resolution";
+  return {len, beat, chapter, target, phase, pct:Math.max(4,Math.min(100,p*100)), campaign:false};
+}
+function storyPanel(){
+  const a=arcStatus();
+  const lenLabel = a.len==="oneshot"?"One-shot":a.len==="campaign"?"Campaign":"Standard";
+  const chap = a.chapter>1 ? ("Chapter "+a.chapter+" \u00B7 ") : "";
+  if(a.campaign){
+    return `<div class="sec-lab">Story</div>
+    <div class="storypanel">
+      <div class="sp-top"><span class="sp-phase">${chap}Open campaign</span><span class="sp-count">${a.beat} scene${a.beat===1?"":"s"}</span></div>
+      <div class="sp-sub">Open-ended \u2014 the tale runs until you end it. Use \u201CWind toward an ending\u201D to close a chapter.</div>
+    </div>`;
+  }
+  return `<div class="sec-lab">Story</div>
+    <div class="storypanel">
+      <div class="sp-top"><span class="sp-phase">${chap}${a.phase}</span><span class="sp-count">scene ${a.beat} / ~${a.target}</span></div>
+      <div class="sp-bar"><i style="width:${a.pct}%"></i></div>
+      <div class="sp-sub">${lenLabel} tale \u2014 the DM steers toward a climax as this bar fills.</div>
+    </div>`;
+}
+
+function storyClock(){
+  const targets = { oneshot:16, standard:32 };
+  const len = (state && state.arcLength) || "standard";
+  const beat = (state && state.beat) || 0;
+  if(len==="campaign"){
+    return "\n\nSTORY PACING (never mention this to the player): This is an open-ended campaign, told as connected chapters \u2014 each with its own build-up and an earned peak, then a hook into the next. Escalate stakes across chapters. Do NOT set arc to \"resolved\" unless the player asks to end, or a chapter reaches a natural, earned finale. Scenes so far: "+beat+".";
+  }
+  const target = targets[len] || 32;
+  const p = beat / target;
+  let phase, guide;
+  if(p < 0.18){ phase="Act I \u2014 Setup"; guide="Establish the hero, the place, and the central problem or goal that drives this story. Plant a clear hook and real stakes."; }
+  else if(p < 0.5){ phase="Act II \u2014 Rising action"; guide="Complicate the goal with obstacles, allies, and a worthy threat. Raise the stakes step by step."; }
+  else if(p < 0.7){ phase="Midpoint"; guide="Deliver a reversal or revelation that recontextualizes the goal and pushes the hero past the point of no return."; }
+  else if(p < 0.9){ phase="Act III \u2014 Escalation"; guide="Converge the threads; make consequences bite and the central conflict urgent. Introduce no unrelated subplots \u2014 steer toward the decisive confrontation."; }
+  else if(p < 1.15){ phase="Climax approaching"; guide="Bring the story to its climax within the next couple of scenes \u2014 the confrontation or choice this whole arc has built toward. Foreshadow it now."; }
+  else { phase="Resolution due"; guide="Deliver the climax and its resolution now, over one or two scenes: settle the central thread, show the aftermath, then set \"arc\":\"resolved\"."; }
+  return "\n\nSTORY PACING (never mention this to the player): target length about "+target+" scenes; currently at scene "+beat+". Phase: "+phase+". "+guide+" Never rush a climax the fiction has not earned, and never cut the player off mid-action \u2014 steer, do not slam. If the player keeps going after a resolution, open a fresh thread.";
+}
+
+/* ---------------- endings ---------------- */
+function windDown(){
+  closeSheet(); if(busy || !state) return; state.pending=null;
+  takeTurn("(Meta note to the Game Master, not spoken by my character: from here, begin steering the story toward its climax and a satisfying ending over the next few scenes.)", {hideAsPlayer:true});
+}
+function newChapter(){
+  state.arcResolved=false; state.beat=0; state.chapter=(state.chapter||1)+1;
+  const div = el("div","scene-mark"); div.innerHTML="<span>Chapter "+state.chapter+"</span>"; $("story").appendChild(div);
+  state.log.push({type:"scene", title:"Chapter "+state.chapter});
+  save();
+  takeTurn("(Begin the next chapter of this hero's story: a new arc with fresh stakes that builds on who they have become and what they carry. Open on a hook and a decision.)", {hideAsPlayer:true});
+}
+function showFinale(){
+  save();
+  setTimeout(()=>{
+    if($("finaleScreen")) return;
+    const h=state.hero;
+    const d = el("div","finale"); d.id="finaleScreen";
+    d.innerHTML = "<h2>The End</h2><p>"+esc(h.name)+"'s tale reaches its close \u2014 Level "+h.level+", "+h.gold+" gold, and a story worth the telling.</p>";
+    const nc = el("button","finale-primary","Begin a new chapter"); nc.onclick=()=>{ d.remove(); newChapter(); };
+    const rt = el("button","finale-ghost","Return to your tales"); rt.onclick=()=>{ d.remove(); state=null; toStart(); };
+    d.appendChild(nc); d.appendChild(rt); document.body.appendChild(d);
+  }, 700);
+}
+function showSaveWarning(){
+  if(document.getElementById("saveWarn")) return;
+  const b=el("div","savewarn"); b.id="saveWarn";
+  b.innerHTML="<span>\u26A0 Couldn\u2019t save progress \u2014 storage may be full or blocked. This session is fine, but new turns may not persist.</span>";
+  const x=el("button","savewarn-x","\u2715"); x.onclick=()=>b.remove(); b.appendChild(x);
+  document.body.appendChild(b);
+}
+
+function die(){
+  save();
+  setTimeout(()=>{
+    if($("deathScreen")) return;
+    const d = el("div","death"); d.id="deathScreen";
+    d.innerHTML = `<h2>You have fallen</h2><p>The tale of ${esc(state.hero.name)} ends here \u2014 but another hero always waits to be written.</p>`;
+    const b = el("button",null,"Return to your tales");
+    b.onclick = ()=>{ d.remove(); state=null; toStart(); };
+    d.appendChild(b); document.body.appendChild(d);
+  }, 900);
+}
+
+/* =====================================================================
+   FEEDBACK
+===================================================================== */
+let toastTimer=null;
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1600); }
+function flashHp(kind){ const m=$("hpMeter"); m.classList.remove("flash-dmg","flash-heal"); void m.offsetWidth; m.classList.add(kind==="dmg"?"flash-dmg":"flash-heal"); }
+function showDMError(e, retry){
+  busy=false; const dock=$("dock"); dock.innerHTML="";
+  const box = el("div","err-note"); const st=e&&e.status; let msg;
+  if(DM_ENDPOINT.indexOf("YOUR-WORKER")>=0) msg="The DM isn't connected yet. Set DM_ENDPOINT in index.html to your deployed Worker URL (see the README).";
+  else if(st===401||st===403) msg="The Worker rejected the request \u2014 check that your ANTHROPIC_API_KEY secret is set correctly.";
+  else if(st===429) msg="Rate limited by the Anthropic API. Wait a moment, then try again.";
+  else if(st===529||st===500||st===502||st===503) msg="The model service is busy or unavailable right now. Try again in a moment.";
+  else if(e && e.message && /Failed to fetch|NetworkError|load failed/i.test(e.message)) msg="Couldn't reach the DM. Check your connection and that DM_ENDPOINT is correct and allows this site (CORS).";
+  else msg="The telling was interrupted"+(e&&e.message?": "+e.message:".")+" Try that action again.";
+  box.innerHTML = esc(msg);
+  if(retry){ const r=el("button","retry-btn","\u21BB Try again"); r.onclick=()=>{ dock.innerHTML=""; retry(); }; box.appendChild(document.createElement("br")); box.appendChild(r); }
+  dock.appendChild(box);
+}
+
+/* =====================================================================
+   BOOT
+===================================================================== */
+$("sheetBtn").addEventListener("click", openSheet);
+$("hudId").addEventListener("click", openSheet);
+$("meters").addEventListener("click", openSheet);
+buildClassGrid();
+buildFeatSelect();
+loadSRD();
+(async()=>{ await migrateStorage(); renderTales(); })();
+if("serviceWorker" in navigator){ window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }); }
+</script>
+</body>
+</html>
