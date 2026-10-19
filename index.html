@@ -58,7 +58,22 @@
   .field-label{font-family:var(--disp); font-weight:500; font-size:.82rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ember-deep); margin:22px 2px 10px}
   .field-label .opt{color:var(--ink-faint); font-weight:400; letter-spacing:.04em; text-transform:none; font-size:.72rem; margin-left:6px; font-family:var(--body); font-style:italic}
 
-  .input-row{display:flex; gap:8px}
+  .input-row{display:flex; gap:8px; align-items:flex-start}
+  textarea.name-input{resize:none; overflow:hidden; min-height:50px; line-height:1.45; font-size:1rem}
+  .tiles{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .tiles.feat-tiles{grid-template-columns:repeat(2,1fr)}
+  .tile{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; padding:12px 6px; color:var(--ink); min-height:62px; transition:border-color .16s, background .16s, transform .06s; text-align:center}
+  .tile:active{transform:translateY(1px)}
+  .tiles.feat-tiles .tile{min-height:42px; padding:10px 8px}
+  .tile-emblem{font-size:1.5rem; line-height:1}
+  .tile-name{font-family:var(--disp); font-weight:600; font-size:.92rem; line-height:1.1}
+  .tile[aria-pressed="true"]{border-color:var(--ember); background:linear-gradient(180deg,rgba(224,169,74,.12),rgba(224,169,74,.02)); box-shadow:0 0 0 1px var(--ember) inset}
+  .tile-detail{margin-top:9px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:11px; padding:11px 14px; font-size:.92rem; line-height:1.45; color:var(--ink)}
+  .tile-detail b{color:var(--ember); font-family:var(--disp); font-weight:600}
+  .tile-detail .td-sub{color:var(--ink-dim); font-size:.86rem}
+  .luck-row{display:flex; flex-direction:column; gap:9px}
+  .r-adv{color:var(--ink-faint); font-size:.78rem}
+  .dice-adv{color:var(--ember); font-weight:600}
   .name-input{width:100%; background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; color:var(--ink); font-size:1.1rem; padding:13px 15px; outline:none; transition:border-color .2s, box-shadow .2s}
   .name-input::placeholder{color:var(--ink-faint); font-style:italic}
   .name-input:focus{border-color:var(--ember-deep); box-shadow:0 0 0 3px rgba(224,169,74,.13)}
@@ -260,7 +275,7 @@
   .sp-bar{height:6px; border-radius:3px; background:#221d29; margin:9px 0 7px; overflow:hidden}
   .sp-bar > i{display:block; height:100%; border-radius:3px; background:linear-gradient(90deg,var(--ember-deep),var(--ember)); transition:width .4s}
   .sp-sub{font-size:.78rem; color:var(--ink-faint); line-height:1.4}
-  @media (min-width:620px){ .classes{grid-template-columns:1fr 1fr} }
+  @media (min-width:620px){ .classes{grid-template-columns:1fr 1fr} .tiles{grid-template-columns:repeat(5,1fr)} .tiles.feat-tiles{grid-template-columns:repeat(3,1fr)} }
   @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
 </style>
 </head>
@@ -287,24 +302,29 @@
       <button class="dice-mini" id="nameDice" title="Random name" type="button">&#127922;</button>
     </div>
 
+    <div class="field-label">Choose your race</div>
+    <div class="tiles" id="raceGrid"></div>
+    <div class="tile-detail" id="raceDetail">Tap a race to see its bonuses and traits.</div>
+
     <div class="field-label">Choose a path</div>
-    <div class="classes" id="classGrid"></div>
+    <div class="tiles" id="classGrid"></div>
+    <div class="tile-detail" id="classDetail">Tap a path to see its details.</div>
 
     <div class="field-label">Appearance <span class="opt">optional</span></div>
     <div class="input-row">
-      <input class="name-input" id="heroLook" maxlength="120" placeholder="A short description of how you look" autocomplete="off">
+      <textarea class="name-input grow" id="heroLook" rows="1" maxlength="200" placeholder="A short description of how you look"></textarea>
       <button class="dice-mini" id="lookDice" title="Random appearance" type="button">&#127922;</button>
     </div>
 
     <div class="field-label">A defining trait <span class="opt">optional</span></div>
     <div class="input-row">
-      <input class="name-input" id="heroTrait" maxlength="120" placeholder="Your temperament, a quirk, a secret" autocomplete="off">
+      <textarea class="name-input grow" id="heroTrait" rows="1" maxlength="200" placeholder="Your temperament, a quirk, a secret"></textarea>
       <button class="dice-mini" id="traitDice" title="Random trait" type="button">&#127922;</button>
     </div>
 
     <div class="field-label">A notable feat <span class="opt">optional</span></div>
-    <select class="feat-select" id="heroFeat"></select>
-    <div class="feat-desc" id="featDesc"></div>
+    <div class="tiles feat-tiles" id="featGrid"></div>
+    <div class="tile-detail" id="featDetail"></div>
 
     <div class="field-label">Story length</div>
     <div class="lenpick" id="lenPick">
@@ -395,20 +415,43 @@ const CLASSES = {
     ab:{int:16,dex:14,con:13,wis:12,cha:10,str:8}, gear:["Oaken staff","Spellbook","Component pouch","Robes","Vial of ink"]},
 };
 
+const RACES = {
+  Human:{emblem:"\uD83D\uDC64", bonus:{str:1,dex:1,con:1,int:1,wis:1,cha:1}, traits:"Adaptable and ambitious, with no inborn weakness.", blurb:"Versatile and driven \u2014 a little better at everything."},
+  Elf:{emblem:"\uD83E\uDDDD", bonus:{dex:2}, traits:"Darkvision, keen senses, fey ancestry; trances rather than sleeps.", blurb:"Graceful, perceptive and long-lived."},
+  Dwarf:{emblem:"\u26F0\uFE0F", bonus:{con:2}, traits:"Darkvision, poison resistance, stonecunning, dwarven resilience.", blurb:"Stout and unyielding, at home in stone and war."},
+  Halfling:{emblem:"\uD83C\uDF40", bonus:{dex:2}, traits:"Small and nimble; lucky, and brave against fear.", blurb:"Small, quick and improbably fortunate."},
+  "Half-Elf":{emblem:"\uD83C\uDF17", bonus:{cha:2,con:1}, traits:"Darkvision, fey ancestry, and an easy way with people.", blurb:"Charismatic wanderers between two worlds."},
+  "Half-Orc":{emblem:"\uD83D\uDCAA", bonus:{str:2,con:1}, traits:"Darkvision, menacing, and refuses to fall (relentless endurance).", blurb:"Powerful and fierce \u2014 hard to put down."},
+  Dragonborn:{emblem:"\uD83D\uDC32", bonus:{str:2,cha:1}, traits:"Draconic ancestry: a breath weapon and resistance to its element.", blurb:"Proud dragon-blooded, with a devastating breath."},
+  Gnome:{emblem:"\uD83D\uDD2E", bonus:{int:2}, traits:"Darkvision, small, and cunning resistance to magic.", blurb:"Tiny, brilliant and bursting with curiosity."},
+  Tiefling:{emblem:"\uD83D\uDE08", bonus:{cha:2,int:1}, traits:"Darkvision, fire resistance, and an infernal bloodline others fear.", blurb:"Fire in the blood, distrust in their shadow."},
+};
+
 const FEATS = [
-  {name:"", desc:"No special feat \u2014 a hero forged by deeds alone."},
-  {name:"Alert", desc:"Seldom caught off guard \u2014 you sense danger before it strikes."},
-  {name:"Lucky", desc:"Fate bends your way in rare, crucial moments."},
-  {name:"Tough", desc:"Hardier than most \u2014 you can take a real beating. (+4 max HP)"},
-  {name:"Keen Mind", desc:"You forget nothing; directions, faces and details stay razor-sharp."},
-  {name:"Actor", desc:"A gifted mimic and liar; you slip into other roles with ease."},
-  {name:"Skulker", desc:"You move unseen and strike from the dark."},
-  {name:"Healer", desc:"Skilled with wounds and field remedies."},
-  {name:"Magic Initiate", desc:"You've learned a fragment of arcane power beyond your path."},
-  {name:"Linguist", desc:"You read and speak many tongues, and craft clever ciphers."},
-  {name:"Charger", desc:"You hit hardest when you close the distance in a rush."},
+  {name:"", desc:"No feat \u2014 a hero forged by deeds alone."},
+  {name:"Alert", desc:"You're never surprised, and you strike first with an edge at the start of a fight."},
+  {name:"Lucky", desc:"Once per chapter you may reroll a failed d20. The game offers the reroll when it matters."},
+  {name:"Tough", desc:"+4 maximum HP. You can take a real beating."},
+  {name:"Keen Mind", desc:"Advantage on checks to recall lore, investigate, or read a situation."},
+  {name:"Actor", desc:"Advantage on checks to deceive, perform, or impersonate someone."},
+  {name:"Skulker", desc:"Advantage on checks to hide, sneak, or move unseen."},
+  {name:"Healer", desc:"Rest and first aid restore noticeably more HP."},
+  {name:"Magic Initiate", desc:"You begin knowing one minor spell from another tradition."},
+  {name:"Linguist", desc:"You can read and understand almost any mundane language or cipher."},
+  {name:"Charger", desc:"Extra damage when you strike after rushing into reach."},
 ];
 const FEAT_MAP = Object.fromEntries(FEATS.map(f=>[f.name,f.desc]));
+// Precise rules the DM must apply for feats that shape outcomes (Tough & Lucky are handled by the app).
+const FEAT_RULES = {
+  "Alert":"The hero is never surprised; on the opening roll of any combat, set the roll's \"adv\" to \"advantage\".",
+  "Keen Mind":"When a check is to recall lore, investigate, or read a situation, set the roll's \"adv\" to \"advantage\".",
+  "Actor":"When a check is to deceive, perform, or impersonate, set the roll's \"adv\" to \"advantage\".",
+  "Skulker":"When a check is to hide, sneak, or move unseen, set the roll's \"adv\" to \"advantage\".",
+  "Healer":"Grant roughly 50% more HP from rests and first aid via effects.hp.",
+  "Magic Initiate":"The hero knows one minor cantrip-level spell; let them use it when fitting.",
+  "Linguist":"The hero can read and understand any mundane language or cipher with no check.",
+  "Charger":"When the hero attacks after rushing into reach, add a little extra impact/damage."
+};
 
 const NAMES_FIRST = ["Ysolde","Corvin","Brannoc","Elowen","Thorne","Marisol","Kaelen","Draven","Seraphine","Alaric","Nyx","Rowan","Isolde","Garrick","Liora","Fenwick","Sable","Oren","Vesper","Talia","Bram","Sorcha","Dain","Elias","Mira","Cassius","Wren","Halvard","Perrin","Sylas","Tamsin","Ulric","Verena","Wystan","Yorick","Zephyra","Aeryn","Cael","Mordecai","Ravenna","Emeric","Isadora","Faelen","Quill","Bexley","Ondine","Sedric","Wyndham"];
 const NAMES_EPITHET = ["of the Ashen Vale","Blackbriar","the Wanderer","Stormcrow","of Duskmere","Ironwood","the Unbroken","Nightingale","Ashford","of the Hollow","Ravenshade","the Quick","Thornfield","of Emberlyn","Frostmere","the Grey","Vane","of Larkspur","Coldwater","the Twice-Lost","Marlow","of the Marches"];
@@ -424,7 +467,7 @@ let state = null;
 let SRD = null;              // loaded monster array
 let SRD_INDEX = null;        // [{re, mon}] for matching
 let srdOn = (function(){ try{ return localStorage.getItem("solo-quest-srd")!=="0"; }catch(e){ return true; } })();
-let selectedClass = null, selectedLen = "standard";
+let selectedClass = null, selectedRace = null, selectedFeat = "", selectedLen = "standard";
 let busy = false, abortCtl = null;
 
 /* ---------------- helpers ---------------- */
@@ -576,22 +619,39 @@ async function migrateStorage(){
 function buildClassGrid(){
   const grid = $("classGrid"); grid.innerHTML = "";
   Object.entries(CLASSES).forEach(([name,c])=>{
-    const b = el("button","class-card"); b.type="button"; b.setAttribute("aria-pressed","false");
-    b.innerHTML = `<span class="class-emblem">${c.emblem}</span>
-      <span style="min-width:0">
-        <span class="class-name">${name}</span>
-        <span class="class-blurb">${c.blurb}</span>
-        <span class="class-stats">d${c.hitDie} hit die \u00B7 AC ${c.ac} \u00B7 ${ABBR[topAbility(c.ab)]} focus</span>
-      </span>`;
-    b.onclick = ()=>{ selectedClass = name; [...grid.children].forEach(ch=>ch.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); refreshBegin(); };
-    grid.appendChild(b);
+    grid.appendChild(tileBtn(c.emblem, name, ()=>{
+      selectedClass = name;
+      $("classDetail").innerHTML = `<b>${esc(name)}</b> \u00B7 d${c.hitDie} hit die \u00B7 AC ${c.ac} \u00B7 ${ABBR[topAbility(c.ab)]} focus<br><span class="td-sub">${esc(c.blurb)}</span>`;
+      refreshBegin();
+    }));
+  });
+}
+function tileBtn(emblem, name, onSel){
+  const b = el("button","tile"); b.type="button"; b.setAttribute("aria-pressed","false");
+  b.innerHTML = `${emblem?`<span class="tile-emblem">${emblem}</span>`:""}<span class="tile-name">${esc(name)}</span>`;
+  b.onclick = ()=>{ const g=b.parentNode; [...g.children].forEach(x=>x.setAttribute("aria-pressed","false")); b.setAttribute("aria-pressed","true"); onSel(); };
+  return b;
+}
+function buildRaceGrid(){
+  const grid = $("raceGrid"); grid.innerHTML = "";
+  Object.entries(RACES).forEach(([name,r])=>{
+    grid.appendChild(tileBtn(r.emblem, name, ()=>{
+      selectedRace = name;
+      const bonus = name==="Human" ? "+1 to all abilities" : Object.entries(r.bonus).map(([k,v])=>`+${v} ${ABBR[k]}`).join(", ");
+      $("raceDetail").innerHTML = `<b>${esc(name)}</b> \u00B7 ${bonus}<br><span class="td-sub">${esc(r.traits)}</span>`;
+      refreshBegin();
+    }));
   });
 }
 function topAbility(ab){ return ORDER.reduce((a,b)=> ab[b]>ab[a]?b:a, "str"); }
-function refreshBegin(){ $("beginBtn").disabled = !(selectedClass && $("heroName").value.trim().length>0); }
+function refreshBegin(){ $("beginBtn").disabled = !(selectedClass && selectedRace && $("heroName").value.trim().length>0); }
 
 function featOptions(sel){ return FEATS.map(f=>`<option value="${esc(f.name)}"${f.name===sel?" selected":""}>${f.name?esc(f.name):"None"}</option>`).join(""); }
-function buildFeatSelect(){ const s=$("heroFeat"); s.innerHTML=featOptions(""); s.onchange=()=>{ $("featDesc").textContent = FEAT_MAP[s.value]||""; }; $("featDesc").textContent = FEAT_MAP[""]; }
+function buildFeatTiles(){
+  const grid=$("featGrid"); grid.innerHTML="";
+  FEATS.forEach(f=>{ grid.appendChild(tileBtn("", f.name||"None", ()=>{ selectedFeat=f.name; $("featDetail").textContent=f.desc; })); });
+  grid.children[0].setAttribute("aria-pressed","true"); selectedFeat=""; $("featDetail").textContent=FEATS[0].desc;
+}
 
 function renderTales(){
   const idx = readIndex(); const box = $("talesList");
@@ -618,6 +678,7 @@ async function continueTale(id){
   state = s;
   if(state.beat==null) state.beat = state.log.filter(e=>e.type==="dm").length;
   if(!state.arcLength) state.arcLength = "standard";
+  if(state.hero.feat==="Lucky" && state.hero.luckAvailable==null) state.hero.luckAvailable=true;
   enterPlay(); renderAll(); rebuildStory(); renderDock();
   if(state.hero.hp<=0) die(); else if(state.arcResolved) showFinale();
 }
@@ -626,8 +687,10 @@ async function continueTale(id){
 $("heroName").addEventListener("input", refreshBegin);
 $("beginBtn").addEventListener("click", startNewGame);
 $("nameDice").addEventListener("click", ()=>{ $("heroName").value = genName(); refreshBegin(); });
-$("lookDice").addEventListener("click", ()=>{ $("heroLook").value = pick(LOOKS); });
-$("traitDice").addEventListener("click", ()=>{ $("heroTrait").value = pick(TRAITS); });
+function grow(e){ if(!e) return; e.style.height="auto"; e.style.height=Math.min(240, e.scrollHeight)+"px"; }
+$("lookDice").addEventListener("click", ()=>{ $("heroLook").value = pick(LOOKS); grow($("heroLook")); });
+$("traitDice").addEventListener("click", ()=>{ $("heroTrait").value = pick(TRAITS); grow($("heroTrait")); });
+["heroLook","heroTrait"].forEach(id=>{ const e=$(id); e.addEventListener("input",()=>grow(e)); });
 [...$("lenPick").children].forEach(b=>b.addEventListener("click",()=>{ selectedLen=b.dataset.len; [...$("lenPick").children].forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); }));
 
 /* =====================================================================
@@ -636,20 +699,23 @@ $("traitDice").addEventListener("click", ()=>{ $("heroTrait").value = pick(TRAIT
 function startNewGame(){
   const name = $("heroName").value.trim() || "The Wanderer";
   const cls = CLASSES[selectedClass];
-  const conMod = mod(cls.ab.con);
-  const feat = $("heroFeat").value || "";
+  const race = RACES[selectedRace];
+  const ab = {...cls.ab};
+  if(race){ for(const k in race.bonus){ ab[k] = (ab[k]||10) + race.bonus[k]; } }
+  const conMod = mod(ab.con);
+  const feat = selectedFeat || "";
   let maxHp = cls.hitDie + conMod;
   if(feat==="Tough") maxHp += 4;
   state = {
     id: genId(),
     hero:{
-      name, className:selectedClass, emblem:cls.emblem, level:1,
-      ab:{...cls.ab}, hitDie:cls.hitDie, ac:cls.ac,
+      name, race:selectedRace, raceTraits: race?race.traits:"", className:selectedClass, emblem:cls.emblem, level:1,
+      ab, hitDie:cls.hitDie, ac:cls.ac,
       maxHp, hp:maxHp, gold:15, xp:0,
       inventory:[...cls.gear], conditions:[],
       appearance: $("heroLook").value.trim(),
       trait: $("heroTrait").value.trim(),
-      feat
+      feat, luckAvailable: feat==="Lucky"
     },
     scene:"The Beginning", combat:false, log:[], turns:[], pending:null,
     arcLength: selectedLen, beat:0, chapter:1, arcResolved:false,
@@ -670,13 +736,15 @@ function instruction(){
   const h = state.hero;
   const mods = ORDER.map(k=>`${ABBR[k]} ${h.ab[k]} (${signed(mod(h.ab[k]))})`).join(", ");
   const sheet = {
-    name:h.name, class:h.className, level:h.level, hp:`${h.hp}/${h.maxHp}`, ac:h.ac, gold:h.gold, xp:h.xp,
+    name:h.name, race:h.race||"\u2014", class:h.className, level:h.level, hp:`${h.hp}/${h.maxHp}`, ac:h.ac, gold:h.gold, xp:h.xp,
     abilities:mods, inventory:h.inventory, conditions:h.conditions.length?h.conditions:["none"]
   };
   let flavor = "";
+  if(h.race) flavor += `Race: ${h.race}${h.raceTraits?` (${h.raceTraits})`:""}. `;
   if(h.appearance) flavor += `Appearance: ${h.appearance}. `;
   if(h.trait) flavor += `Defining trait: ${h.trait}. `;
   if(h.feat) flavor += `Notable feat: ${h.feat} (${FEAT_MAP[h.feat]||""}). `;
+  if(h.feat && FEAT_RULES[h.feat]) flavor += `FEAT RULE you must apply: ${FEAT_RULES[h.feat]} `;
   if(flavor) flavor = "\nCHARACTER FLAVOR (weave these in naturally where they fit; the feat can occasionally matter to outcomes): "+flavor;
 
   return `You are the Game Master of a solo, single-player fantasy tabletop RPG in the spirit of Dungeons & Dragons. You run an immersive, reactive adventure for ONE hero \u2014 the player.
@@ -696,6 +764,7 @@ WHEN TO CALL FOR A ROLL:
 - Do NOT request a roll for safe, trivial, or purely narrative actions (walking, chatting calmly, looking around a safe room).
 - After you request a roll, my next message will report the die, my modifier, the total, whether it beat the DC, and any natural 20 or natural 1. Narrate the outcome proportionally \u2014 a natural 20 is a triumphant surprise, a natural 1 a memorable disaster.
 - In combat, request attack rolls, describe what enemies do, and apply damage to me through effects.hp (negative numbers).
+- ADVANTAGE / DISADVANTAGE: when circumstances clearly favor me (a smart plan, the right tool, help, surprise) add "adv":"advantage" to the roll; when clearly against me (wounded, blinded, terrible footing, acting against my nature) add "adv":"disadvantage"; otherwise omit it or use null. Apply my feat rule above whenever it fits.
 
 CONSEQUENCES (effects):
 - Use effects to change my state: hp (negative = damage, positive = healing), gold, xp (award 10-50 when I overcome a real challenge), addItems / removeItems (short item names), conditions (an array to REPLACE my conditions, e.g. ["Poisoned"] or [] to clear).
@@ -706,7 +775,7 @@ OUTPUT FORMAT \u2014 follow EXACTLY, every turn:
 2) Then a line containing only: ===
 3) Then ONE minified JSON object and nothing after it:
 {"sceneTitle":"short scene name","combat":false,"roll":null,"choices":["do X","do Y","do Z"],"effects":null}
-- "roll" is null, OR an object {"ability":"Dexterity","dc":13,"reason":"why"}.
+- "roll" is null, OR an object {"ability":"Dexterity","dc":13,"reason":"why","adv":null}. "adv" is "advantage", "disadvantage", or null.
 - "effects" is null, OR an object like {"hp":-4,"gold":0,"xp":20,"addItems":["Rusted key"],"removeItems":[],"conditions":null}. Only include keys that change.
 - "choices": 2 to 4 short suggested actions I might take next. I can also type my own. If a roll is required, still offer a couple of choices for afterward.
 - "sceneTitle": a brief evocative name for the current location/situation.
@@ -785,7 +854,7 @@ function applyData(data){
   let roll = null;
   if(data.roll && typeof data.roll==="object" && data.roll.ability){
     const key = ABIL[data.roll.ability] || ABIL[cap(data.roll.ability)] || null;
-    if(key) roll = { ability:cap(data.roll.ability), key, dc:clampInt(data.roll.dc,5,25,12), reason:data.roll.reason||"" };
+    if(key) roll = { ability:cap(data.roll.ability), key, dc:clampInt(data.roll.dc,5,25,12), reason:data.roll.reason||"", adv:normAdv(data.roll.adv) };
   }
   const choices = Array.isArray(data.choices) ? data.choices.filter(c=>typeof c==="string" && c.trim()).slice(0,4) : [];
   state.pending = { choices, roll };
@@ -825,26 +894,50 @@ function d20svg(num, cls){
     <text x="23" y="27" text-anchor="middle" font-family="Grenze Gotisch, serif" font-weight="700" font-size="16" fill="#f0c766">${num}</text></svg>`;
 }
 function modFor(key){ return mod(state.hero.ab[key]); }
+function normAdv(a){ a=String(a||"").toLowerCase(); return a==="advantage"?"advantage":a==="disadvantage"?"disadvantage":null; }
+function d20(){ return 1+Math.floor(Math.random()*20); }
+function rollPair(adv){ const a=d20(), b=d20(); if(adv==="advantage") return {die:Math.max(a,b), pair:[a,b]}; if(adv==="disadvantage") return {die:Math.min(a,b), pair:[a,b]}; return {die:a, pair:null}; }
 function doRoll(rollDef, btn){
   btn.disabled = true;
   const dieEl = btn.querySelector(".d20");
-  const final = 1 + Math.floor(Math.random()*20);
+  const res = rollPair(rollDef.adv);
   const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
   let ticks = reduce?0:12;
   const spin = ()=>{
-    if(ticks>0){ dieEl.querySelector("text").textContent = 1+Math.floor(Math.random()*20); ticks--; setTimeout(spin, 40+(12-ticks)*7); }
-    else { dieEl.querySelector("text").textContent = final; setTimeout(()=>resolveRoll(rollDef, final), 260); }
+    if(ticks>0){ dieEl.querySelector("text").textContent = d20(); ticks--; setTimeout(spin, 40+(12-ticks)*7); }
+    else { dieEl.querySelector("text").textContent = res.die; setTimeout(()=>resolveRoll(rollDef, res.die, res.pair), 260); }
   };
-  if(reduce){ dieEl.querySelector("text").textContent=final; resolveRoll(rollDef, final); } else spin();
+  if(reduce){ dieEl.querySelector("text").textContent=res.die; resolveRoll(rollDef, res.die, res.pair); } else spin();
 }
-function resolveRoll(rollDef, die){
+function rollResult(rollDef, die, pair, lucky){
   const m = modFor(rollDef.key), total = die+m, crit=die===20, fumble=die===1;
   const success = crit ? true : fumble ? false : total>=rollDef.dc;
-  addRollSlip({ability:rollDef.ability, key:rollDef.key, dc:rollDef.dc, die, m, total, success, crit, fumble});
-  let verdict = success ? "Success" : "Failure";
-  if(crit) verdict = "Critical success (natural 20)";
-  if(fumble) verdict = "Critical failure (natural 1)";
-  const report = `I make a ${rollDef.ability} check${rollDef.reason?` to ${rollDef.reason}`:""}: I rolled a ${die} on the d20 ${signed(m)} (${ABBR[rollDef.key]}) = ${total} versus DC ${rollDef.dc}. Result: ${verdict}. Narrate what happens.`;
+  return {ability:rollDef.ability, key:rollDef.key, dc:rollDef.dc, die, m, total, success, crit, fumble, adv:rollDef.adv||null, pair:pair||null, lucky:!!lucky};
+}
+function resolveRoll(rollDef, die, pair){
+  const r = rollResult(rollDef, die, pair, false);
+  addRollSlip(r);
+  if(!r.success && state.hero.feat==="Lucky" && state.hero.luckAvailable){ offerLuck(rollDef, r); return; }
+  sendRoll(rollDef, r);
+}
+function offerLuck(rollDef, r){
+  const dock=$("dock"); dock.innerHTML="";
+  const panel=el("div","dicepanel");
+  panel.innerHTML=`<div class="dice-reason">\uD83C\uDF40 You failed this ${esc(rollDef.ability)} check. Spend your Luck (once per chapter) to reroll?</div>`;
+  const row=el("div","luck-row");
+  const rr=el("button","roll-btn"); rr.innerHTML="\uD83C\uDF40 Reroll with Luck";
+  rr.onclick=()=>{ state.hero.luckAvailable=false; dock.innerHTML=""; const res=rollPair(rollDef.adv); const r2=rollResult(rollDef,res.die,res.pair,true); addRollSlip(r2); save(); sendRoll(rollDef, r2); };
+  const keep=el("button","ghost-btn"); keep.textContent="Accept the failure";
+  keep.onclick=()=>{ dock.innerHTML=""; sendRoll(rollDef, r); };
+  row.appendChild(rr); row.appendChild(keep); panel.appendChild(row); dock.appendChild(panel);
+}
+function sendRoll(rollDef, r){
+  let verdict = r.success ? "Success" : "Failure";
+  if(r.crit) verdict = "Critical success (natural 20)";
+  if(r.fumble) verdict = "Critical failure (natural 1)";
+  const advTxt = r.adv ? ` (rolled with ${r.adv})` : "";
+  const luckTxt = r.lucky ? " I rerolled this using my Lucky feat." : "";
+  const report = `I make a ${rollDef.ability} check${rollDef.reason?` to ${rollDef.reason}`:""}${advTxt}: I rolled ${r.die} on the d20 ${signed(r.m)} (${ABBR[r.key]}) = ${r.total} versus DC ${r.dc}. Result: ${verdict}.${luckTxt} Narrate what happens.`;
   state.pending = null;
   takeTurn(report, {hideAsPlayer:true});
 }
@@ -860,9 +953,11 @@ function addDmPlaceholder(){ const wrap=el("div","turn dm"); const body=el("div"
 function addRollSlip(r){ state.log.push({type:"roll", r}); renderRollSlip(r); }
 function renderRollSlip(r){
   const slip = el("div","roll-slip"+(r.crit?" crit":r.fumble?" fumble":""));
+  const advNote = r.pair ? ` <span class="r-adv">(${r.adv==="advantage"?"adv":"dis"} ${r.pair[0]}/${r.pair[1]})</span>` : "";
+  const luckNote = r.lucky ? ` <span class="r-adv">\uD83C\uDF40</span>` : "";
   slip.innerHTML = `<span>${d20svg(r.die)}</span>
     <span class="r-txt"><span class="r-head ${r.success?'r-succ':'r-fail'}">${r.crit?'Critical success!':r.fumble?'Critical failure!':(r.success?'Success':'Failure')}</span><br>
-    <span class="r-math">${r.ability}: ${r.die} ${signed(r.m)} = <b>${r.total}</b> vs DC ${r.dc}</span></span>`;
+    <span class="r-math">${r.ability}: ${r.die} ${signed(r.m)} = <b>${r.total}</b> vs DC ${r.dc}${advNote}${luckNote}</span></span>`;
   $("story").appendChild(slip); scrollStory();
 }
 function rebuildStory(){
@@ -909,8 +1004,9 @@ function renderDock(){
 }
 function renderDicePanel(roll){
   const dock = $("dock"); const m=modFor(roll.key); const panel=el("div","dicepanel");
+  const advLabel = roll.adv==="advantage" ? ' \u00B7 Advantage' : roll.adv==="disadvantage" ? ' \u00B7 Disadvantage' : '';
   panel.innerHTML = `${roll.reason?`<div class="dice-reason">${esc(roll.reason)}</div>`:""}
-    <div class="dice-call"><div class="dice-check">${roll.ability} check</div><div class="dice-dc">DC ${roll.dc}<small>to beat</small></div></div>`;
+    <div class="dice-call"><div class="dice-check">${roll.ability} check<span class="dice-adv">${advLabel}</span></div><div class="dice-dc">DC ${roll.dc}<small>to beat</small></div></div>`;
   const btn = el("button","roll-btn"); btn.innerHTML=`${d20svg("?")}<span>Roll the d20</span>`; btn.onclick=()=>doRoll(roll,btn);
   panel.appendChild(btn); panel.appendChild(el("div","modnote",`Your ${ABBR[roll.key]} modifier ${signed(m)} is added to the roll`));
   dock.appendChild(panel);
@@ -927,13 +1023,14 @@ function openSheet(){
   const inv = h.inventory.length ? `<ul class="inv-list">${h.inventory.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>` : `<div class="inv-empty">Your pack is empty.</div>`;
   const conds = h.conditions.length ? `<div class="sec-lab">Conditions</div><div class="cond-row">${h.conditions.map(c=>`<span class="cond">${esc(c)}</span>`).join("")}</div>` : "";
   const flavorRows = [];
+  flavorRows.push(h.race ? `<p class="fl-line"><b>Race</b><br>${esc(h.race)}${h.raceTraits?` \u2014 ${esc(h.raceTraits)}`:""}</p>` : "");
   flavorRows.push(h.appearance ? `<p class="fl-line"><b>Look</b><br>${esc(h.appearance)}</p>` : "");
   flavorRows.push(h.trait ? `<p class="fl-line"><b>Trait</b><br>${esc(h.trait)}</p>` : "");
   flavorRows.push(h.feat ? `<p class="fl-line"><b>Feat</b><br>${esc(h.feat)} \u2014 ${esc(FEAT_MAP[h.feat]||"")}</p>` : "");
   const flavor = flavorRows.filter(Boolean).length ? `<div class="flavor">${flavorRows.filter(Boolean).join("")}</div>` : `<div class="flavor"><span class="fl-empty">No appearance or feats set yet. Tap Edit to add some flair.</span></div>`;
   sheet.innerHTML = `
     <div class="sheet-h"><div class="sheet-title">${h.emblem} ${esc(h.name)}</div><button class="x-btn" id="sheetX">\u2715</button></div>
-    <div class="sheet-sub">${h.className} \u00B7 Level ${h.level} \u00B7 AC ${h.ac} \u00B7 ${h.hp}/${h.maxHp} HP \u00B7 ${h.gold} gold</div>
+    <div class="sheet-sub">${h.race?esc(h.race)+" ":""}${h.className} \u00B7 Level ${h.level} \u00B7 AC ${h.ac} \u00B7 ${h.hp}/${h.maxHp} HP \u00B7 ${h.gold} gold</div>
     <div class="sec-lab">Who you are <button class="edit-link" id="editBtn">\u270E Edit</button></div>
     ${flavor}
     ${storyPanel()}
@@ -971,9 +1068,9 @@ function openEdit(){
     <div class="edit-field"><label>Name</label>
       <div class="input-row"><input class="name-input" id="eName" maxlength="32" value="${esc(h.name)}"><button class="dice-mini" id="eNameD" type="button">\uD83C\uDFB2</button></div></div>
     <div class="edit-field"><label>Appearance</label>
-      <div class="input-row"><input class="name-input" id="eLook" maxlength="120" value="${esc(h.appearance||"")}" placeholder="How you look"><button class="dice-mini" id="eLookD" type="button">\uD83C\uDFB2</button></div></div>
+      <div class="input-row"><textarea class="name-input grow" id="eLook" rows="1" maxlength="200" placeholder="How you look">${esc(h.appearance||"")}</textarea><button class="dice-mini" id="eLookD" type="button">\uD83C\uDFB2</button></div></div>
     <div class="edit-field"><label>Defining trait</label>
-      <div class="input-row"><input class="name-input" id="eTrait" maxlength="120" value="${esc(h.trait||"")}" placeholder="Temperament, a quirk, a secret"><button class="dice-mini" id="eTraitD" type="button">\uD83C\uDFB2</button></div></div>
+      <div class="input-row"><textarea class="name-input grow" id="eTrait" rows="1" maxlength="200" placeholder="Temperament, a quirk, a secret">${esc(h.trait||"")}</textarea><button class="dice-mini" id="eTraitD" type="button">\uD83C\uDFB2</button></div></div>
     <div class="edit-field"><label>Notable feat</label>
       <select class="feat-select" id="eFeat">${featOptions(h.feat||"")}</select>
       <div class="feat-desc" id="eFeatDesc">${esc(FEAT_MAP[h.feat||""]||"")}</div></div>
@@ -981,8 +1078,9 @@ function openEdit(){
   ov.appendChild(sheet); document.body.appendChild(ov);
   $("editX").onclick = ()=>ov.remove();
   $("eNameD").onclick = ()=>{ $("eName").value = genName(); };
-  $("eLookD").onclick = ()=>{ $("eLook").value = pick(LOOKS); };
-  $("eTraitD").onclick = ()=>{ $("eTrait").value = pick(TRAITS); };
+  $("eLookD").onclick = ()=>{ $("eLook").value = pick(LOOKS); grow($("eLook")); };
+  $("eTraitD").onclick = ()=>{ $("eTrait").value = pick(TRAITS); grow($("eTrait")); };
+  ["eLook","eTrait"].forEach(id=>{ const e=$(id); e.addEventListener("input",()=>grow(e)); grow(e); });
   $("eFeat").onchange = ()=>{ $("eFeatDesc").textContent = FEAT_MAP[$("eFeat").value]||""; };
   $("eSave").onclick = ()=>{
     h.name = $("eName").value.trim() || h.name;
@@ -1072,6 +1170,7 @@ function windDown(){
 }
 function newChapter(){
   state.arcResolved=false; state.beat=0; state.chapter=(state.chapter||1)+1;
+  if(state.hero.feat==="Lucky") state.hero.luckAvailable=true;
   const div = el("div","scene-mark"); div.innerHTML="<span>Chapter "+state.chapter+"</span>"; $("story").appendChild(div);
   state.log.push({type:"scene", title:"Chapter "+state.chapter});
   save();
@@ -1135,8 +1234,9 @@ function showDMError(e, retry){
 $("sheetBtn").addEventListener("click", openSheet);
 $("hudId").addEventListener("click", openSheet);
 $("meters").addEventListener("click", openSheet);
+buildRaceGrid();
 buildClassGrid();
-buildFeatSelect();
+buildFeatTiles();
 loadSRD();
 (async()=>{ await migrateStorage(); renderTales(); })();
 if("serviceWorker" in navigator){ window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }); }
