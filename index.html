@@ -361,6 +361,12 @@
       <button class="dice-mini" id="traitDice" title="Random trait" type="button">&#127922;</button>
     </div>
 
+    <div class="field-label">Your goal <span class="opt">optional \u00B7 the DM steers toward it</span></div>
+    <div class="input-row">
+      <textarea class="name-input grow" id="heroGoal" rows="1" maxlength="200" placeholder="What is your hero after? (revenge, a lost sibling, glory\u2026)"></textarea>
+      <button class="dice-mini" id="goalDice" title="Random goal" type="button">&#127922;</button>
+    </div>
+
     <div class="field-label">A notable feat <span class="opt">optional</span></div>
     <div class="tiles feat-tiles" id="featGrid"></div>
     <div class="tile-detail" id="featDetail"></div>
@@ -420,7 +426,7 @@
 ===================================================================== */
 const DM_ENDPOINT = "/api/dm";
 const MODEL = "claude-sonnet-5";
-const MAX_TOKENS = 1200;
+const MAX_TOKENS = 1500;
 
 /* ---------------- data ---------------- */
 const ABIL = { Strength:"str", Dexterity:"dex", Constitution:"con", Intelligence:"int", Wisdom:"wis", Charisma:"cha" };
@@ -781,6 +787,7 @@ function d20HpSvg(rolls){ return `<div class="hp-die">${rolls.reduce((a,b)=>a+b,
 const NAMES_FIRST = ["Ysolde","Corvin","Brannoc","Elowen","Thorne","Marisol","Kaelen","Draven","Seraphine","Alaric","Nyx","Rowan","Isolde","Garrick","Liora","Fenwick","Sable","Oren","Vesper","Talia","Bram","Sorcha","Dain","Elias","Mira","Cassius","Wren","Halvard","Perrin","Sylas","Tamsin","Ulric","Verena","Wystan","Yorick","Zephyra","Aeryn","Cael","Mordecai","Ravenna","Emeric","Isadora","Faelen","Quill","Bexley","Ondine","Sedric","Wyndham"];
 const NAMES_EPITHET = ["of the Ashen Vale","Blackbriar","the Wanderer","Stormcrow","of Duskmere","Ironwood","the Unbroken","Nightingale","Ashford","of the Hollow","Ravenshade","the Quick","Thornfield","of Emberlyn","Frostmere","the Grey","Vane","of Larkspur","Coldwater","the Twice-Lost","Marlow","of the Marches"];
 const LOOKS = ["a weathered face and a jagged scar cutting one brow","sharp green eyes and a mane of copper hair","tall and gaunt, wrapped in road-worn grey","close-cropped dark hair and ink-stained fingers","broad-shouldered with a plaited beard and iron rings","pale and freckled, with a restless, crooked grin","silver-eyed beneath a deep hood, moving without sound","sun-browned skin, a shaved head, and countless small tattoos","small and wiry, quick of hand and quicker of eye","a soft face that hides a soldier's cold stare","auburn braids threaded with beads and a chipped tooth","one clouded blind eye and a voice like gravel"];
+const GOALS = ["avenge a murdered family","find a sibling who vanished years ago","clear my name of a crime I did not commit","grow rich enough to never beg again","uncover the truth behind a recurring dream","earn a knighthood and a hall of my own","bring down the cult that took everything from me","find a cure for a curse in my blood","prove myself to a mentor who doubted me","recover a stolen family heirloom","discover what lies beyond the edge of the map","atone for a terrible mistake in my past"];
 const TRAITS = ["quick to laugh, slow to trust","haunted by a past I won't speak of","reckless whenever there's coin involved","loyal to a fault, once loyalty is earned","curious to the point of trouble","calm even when the world burns","sharp-tongued and far too proud","soft-hearted beneath a hard shell","superstitious, always tracing old wards","hungry for a name that outlives me","forever bargaining, never quite honest","kind to strangers, ruthless to liars"];
 
 const INDEX_KEY = "solo-quest-index-v2";
@@ -855,7 +862,7 @@ async function streamDM(system, messages, opts){
   const res = await fetch(DM_ENDPOINT, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ system, messages, model:MODEL, max_tokens:MAX_TOKENS, stream:true }),
+    body: JSON.stringify({ system, messages, model: opts.model||MODEL, max_tokens: opts.max_tokens||MAX_TOKENS, stream:true }),
     signal: opts.signal
   });
   if(!res.ok || !res.body){
@@ -1017,6 +1024,7 @@ async function continueTale(id){
   state = s;
   if(state.beat==null) state.beat = state.log.filter(e=>e.type==="dm").length;
   if(!state.arcLength) state.arcLength = "standard";
+  if(state.recap===undefined){ state.recap=""; state.recapAt=state.beat||0; }
   if(state.hero.caster===undefined){ const _k=CLASS_KIT[state.hero.className]; if(_k){ state.hero.caster=_k.caster||null; if(_k.caster && !(state.hero.cantrips&&state.hero.cantrips.length)){ const _dk=defaultKit(state.hero.className); state.hero.cantrips=_dk.cantrips; state.hero.spells=_dk.spells; } } }
   if(state.hero.feat==="Lucky" && state.hero.luckAvailable==null) state.hero.luckAvailable=true;
   enterPlay(); renderAll(); rebuildStory(); renderDock();
@@ -1030,7 +1038,8 @@ $("nameDice").addEventListener("click", ()=>{ $("heroName").value = genName(); r
 function grow(e){ if(!e) return; e.style.height="auto"; e.style.height=Math.min(240, e.scrollHeight)+"px"; }
 $("lookDice").addEventListener("click", ()=>{ $("heroLook").value = pick(LOOKS); grow($("heroLook")); });
 $("traitDice").addEventListener("click", ()=>{ $("heroTrait").value = pick(TRAITS); grow($("heroTrait")); });
-["heroLook","heroTrait"].forEach(id=>{ const e=$(id); e.addEventListener("input",()=>grow(e)); });
+$("goalDice").addEventListener("click", ()=>{ $("heroGoal").value = pick(GOALS); grow($("heroGoal")); });
+["heroLook","heroTrait","heroGoal"].forEach(id=>{ const e=$(id); e.addEventListener("input",()=>grow(e)); });
 [...$("lenPick").children].forEach(b=>b.addEventListener("click",()=>{ selectedLen=b.dataset.len; [...$("lenPick").children].forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); }));
 [...$("depthPick").children].forEach(b=>b.addEventListener("click",()=>{ detailedOn=b.dataset.depth==="detailed"; [...$("depthPick").children].forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); buildDetail(); }));
 
@@ -1064,10 +1073,11 @@ function startNewGame(){
       inventory:[...cls.gear], conditions:[],
       appearance: $("heroLook").value.trim(),
       trait: $("heroTrait").value.trim(),
+      goal: $("heroGoal").value.trim(),
       feat, luckAvailable: feat==="Lucky",
       background, bgSkills, caster, cantrips, spells, detailed: detailedOn
     },
-    scene:"The Beginning", combat:false, log:[], turns:[], pending:null,
+    scene:"The Beginning", combat:false, log:[], turns:[], pending:null, recap:"", recapAt:0,
     arcLength: selectedLen, beat:0, chapter:1, arcResolved:false,
   };
   enterPlay(); renderAll(); $("story").innerHTML="";
@@ -1100,7 +1110,7 @@ function instruction(){
   return `You are the Game Master of a solo, single-player fantasy tabletop RPG in the spirit of Dungeons & Dragons. You run an immersive, reactive adventure for ONE hero \u2014 the player.
 
 THE HERO (current state \u2014 always obey these numbers):
-${JSON.stringify(sheet)}${flavor}${kitSummary(h)}
+${JSON.stringify(sheet)}${flavor}${kitSummary(h)}${memoryBlock(h)}
 Current scene: ${state.scene}. In combat: ${state.combat?"yes":"no"}.
 
 NARRATION RULES:
@@ -1127,7 +1137,7 @@ OUTPUT FORMAT \u2014 follow EXACTLY, every turn:
 {"sceneTitle":"short scene name","combat":false,"roll":null,"choices":["do X","do Y","do Z"],"effects":null}
 - "roll" is null, OR an object {"ability":"Dexterity","dc":13,"reason":"why","adv":null}. "adv" is "advantage", "disadvantage", or null.
 - "effects" is null, OR an object like {"hp":-4,"gold":0,"xp":20,"addItems":["Rusted key"],"removeItems":[],"conditions":null}. Only include keys that change.
-- "choices": 2 to 4 short suggested actions I might take next. I can also type my own. If a roll is required, still offer a couple of choices for afterward.
+- "choices": ALWAYS 2 to 4 SPECIFIC actions drawn from THIS scene \u2014 name the actual people, places, objects, and exits in play. Never generic filler like "Continue", "Look around", or "Ready yourself". I can also type my own. If a roll is required, still offer concrete choices for afterward.\n- Keep narration to 2-3 tight paragraphs so you always have room to finish the JSON block.
 - "sceneTitle": a brief evocative name for the current location/situation.
 - "arc": normally "building". Set it to "resolved" ONLY on the turn you deliver the story's final resolution and the tale is complete.` + storyClock();
 }
@@ -1135,7 +1145,7 @@ OUTPUT FORMAT \u2014 follow EXACTLY, every turn:
 function buildSystem(){ return instruction() + srdBlock(); }
 function trimmedMessages(){
   const convo = state.turns.slice();
-  const LIMIT = 60000; let total = 0; const kept = [];
+  const LIMIT = 26000; let total = 0; const kept = [];
   for(let i=convo.length-1; i>=0; i--){ total += convo[i].content.length + 12; if(total>LIMIT && kept.length>=2) break; kept.unshift(convo[i]); }
   // API requires the first message to be a user turn
   while(kept.length && kept[0].role!=="user") kept.shift();
@@ -1181,23 +1191,41 @@ async function takeTurn(playerText, opts){
   state.turns.push({ role:"assistant", content: shown });
   state.log.push({type:"dm", t: state.turns.length-1});
   state.beat = (state.beat||0) + 1;
-  renderAll(); renderDock(); scrollStory(); save();
+  renderAll(); renderDock(); pruneStory(); scrollStory(); save();
   if(state.arcResolved) showFinale();
+  maybeRecap();
 }
 
 function narrationOf(text){ const m=text.search(/\n\s*={3,}/); return (m===-1?text:text.slice(0,m)).trim(); }
 function splitResponse(full){
-  const m = full.search(/\n\s*={3,}/);
-  if(m===-1) return { narration: full.trim(), data:null };
-  const narration = full.slice(0,m).trim(); const rest = full.slice(m);
-  const a = rest.indexOf("{"), b = rest.lastIndexOf("}"); let data=null;
-  if(a!==-1 && b!==-1 && b>a){ try{ data=JSON.parse(rest.slice(a,b+1)); }catch(e){ data=null; } }
-  return { narration, data };
+  const sep = full.search(/\n\s*={3,}/);
+  let narration, zone;
+  if(sep!==-1){ narration = full.slice(0,sep); zone = full.slice(sep); }
+  else {
+    const mm = full.match(/\{[\s\S]*("choices"|"sceneTitle")[\s\S]*\}\s*$/);
+    if(mm){ narration = full.slice(0, mm.index); zone = mm[0]; }
+    else return { narration: full.trim(), data:null };
+  }
+  let data=null;
+  const a=zone.indexOf("{"), b=zone.lastIndexOf("}");
+  if(a!==-1 && b!==-1 && b>a){ try{ data=JSON.parse(zone.slice(a,b+1)); }catch(e){ data=salvageData(zone); } }
+  else data=salvageData(zone);
+  return { narration: narration.trim(), data };
+}
+function salvageData(s){
+  const out={}; let m;
+  if(m=s.match(/"choices"\s*:\s*\[([\s\S]*?)\]/)){ const strs=m[1].match(/"(?:[^"\\]|\\.)*"/g)||[]; const arr=strs.map(x=>{ try{ return JSON.parse(x); }catch(_){ return null; } }).filter(v=>v); if(arr.length) out.choices=arr; }
+  if(m=s.match(/"sceneTitle"\s*:\s*"((?:[^"\\]|\\.)*)"/)){ try{ out.sceneTitle=JSON.parse('"'+m[1]+'"'); }catch(_){} }
+  if(m=s.match(/"combat"\s*:\s*(true|false)/)) out.combat=(m[1]==="true");
+  if(m=s.match(/"arc"\s*:\s*"(\w+)"/)) out.arc=m[1];
+  if(m=s.match(/"roll"\s*:\s*(\{[\s\S]*?\})/)){ try{ out.roll=JSON.parse(m[1]); }catch(_){} }
+  if(m=s.match(/"effects"\s*:\s*(\{[\s\S]*?\})/)){ try{ out.effects=JSON.parse(m[1]); }catch(_){} }
+  return (out.choices||out.sceneTitle||out.roll||out.effects||typeof out.combat==="boolean") ? out : null;
 }
 
 function applyData(data){
   let sceneChanged=false;
-  if(!data){ state.pending = { choices:["Continue","Look around","Ready myself"], roll:null }; return {sceneChanged}; }
+  if(!data){ state.pending = { choices:[], roll:null }; return {sceneChanged}; }
   if(typeof data.sceneTitle==="string" && data.sceneTitle.trim() && data.sceneTitle!==state.scene){ state.scene=data.sceneTitle.trim(); sceneChanged=true; }
   if(typeof data.combat==="boolean") state.combat = data.combat;
   if(data.effects && typeof data.effects==="object") applyEffects(data.effects);
@@ -1224,6 +1252,29 @@ function applyEffects(fx){
   if(Array.isArray(fx.removeItems)) fx.removeItems.forEach(it=>{ const i=h.inventory.findIndex(x=>x.toLowerCase()===String(it).toLowerCase()); if(i>=0) h.inventory.splice(i,1); });
   if(Array.isArray(fx.conditions)) h.conditions = fx.conditions.filter(c=>typeof c==="string" && c.trim());
 }
+/* ---- rolling recap + memory + performance ---- */
+let recapBusy=false;
+const RECAP_EVERY=8;
+function memoryBlock(h){
+  let s="";
+  if(h.goal) s += "\nHERO'S GOAL (a driving thread \u2014 steer the story toward chances to pursue it, and acknowledge progress or setbacks toward it): "+h.goal;
+  if(state.recap) s += "\nSTORY SO FAR (established canon the player cannot see \u2014 stay consistent with it and never contradict it):\n"+state.recap;
+  return s;
+}
+function maybeRecap(){ if(state && ((state.beat||0) - (state.recapAt||0) >= RECAP_EVERY)) updateRecap(); }
+async function updateRecap(){
+  if(recapBusy || !state) return; recapBusy=true;
+  const beatAt=state.beat;
+  const recent = state.turns.slice(-18).map(t=>(t.role==="user"?"PLAYER: ":"DM: ")+t.content).join("\n\n").slice(-12000);
+  const sys = "You keep a tight canonical summary of a solo tabletop RPG so the Game Master never loses the thread. Capture: the hero's current situation and location; named NPCs and their stance toward the hero; open quests, threats and promises; the hero's goal and progress toward it; key allies, enemies, items and consequential decisions. Drop minor moment-to-moment detail. Write 120-220 words of plain prose, no headings, no preamble.";
+  const prior = state.recap ? "CURRENT SUMMARY:\n"+state.recap+"\n\n" : "";
+  const usr = prior + "RECENT SCENES:\n"+recent+"\n\nWrite the updated summary now.";
+  try{ const txt = await streamDM(sys, [{role:"user",content:usr}], { max_tokens:420 }); if(txt && txt.trim().length>40){ state.recap=txt.trim(); state.recapAt=beatAt; save(); } }
+  catch(e){}
+  recapBusy=false;
+}
+function pruneStory(){ const s=$("story"); if(!s) return; const MAX=140; while(s.children.length>MAX) s.removeChild(s.firstChild); }
+
 function checkLevel(){
   const h=state.hero; const gained=[];
   while(h.xp >= xpForLevel(h.level)){ h.xp -= xpForLevel(h.level); h.level++; gained.push(h.level); }
@@ -1309,12 +1360,15 @@ function renderRollSlip(r){
 }
 function rebuildStory(){
   const s = $("story"); s.innerHTML="";
-  state.log.forEach(e=>{
+  const log = state.log||[]; const TAIL=120;
+  const start = log.length>TAIL ? log.length-TAIL : 0;
+  if(start>0){ const note=el("div","scene-mark"); note.innerHTML="<span>earlier scenes \u2026</span>"; s.appendChild(note); }
+  for(let i=start;i<log.length;i++){ const e=log[i];
     if(e.type==="scene"){ const m=el("div","scene-mark"); m.innerHTML=`<span>${esc(e.title)}</span>`; s.appendChild(m); }
     else if(e.type==="player"){ const txt = e.t!=null ? ((state.turns[e.t]||{}).content||"") : (e.text||""); const t=el("div","turn player"); t.innerHTML=`<span class="who">${esc(state.hero.name)}</span>${esc(txt)}`; s.appendChild(t); }
     else if(e.type==="dm"){ const txt = e.t!=null ? ((state.turns[e.t]||{}).content||"") : (e.text||""); const t=el("div","turn dm"); const b=el("div","body"); b.innerHTML=proseHtml(txt); t.appendChild(b); s.appendChild(t); }
     else if(e.type==="roll"){ renderRollSlip(e.r); }
-  });
+  }
   scrollStory();
 }
 
@@ -1374,6 +1428,7 @@ function openSheet(){
   flavorRows.push(h.background ? `<p class="fl-line"><b>Background</b><br>${esc(h.background)}${h.bgSkills?` \u2014 ${esc(h.bgSkills)}`:""}</p>` : "");
   flavorRows.push(h.appearance ? `<p class="fl-line"><b>Look</b><br>${esc(h.appearance)}</p>` : "");
   flavorRows.push(h.trait ? `<p class="fl-line"><b>Trait</b><br>${esc(h.trait)}</p>` : "");
+  flavorRows.push(h.goal ? `<p class="fl-line"><b>Goal</b><br>${esc(h.goal)}</p>` : "");
   flavorRows.push(h.feat ? `<p class="fl-line"><b>Feat</b><br>${esc(h.feat)} \u2014 ${esc(FEAT_MAP[h.feat]||"")}</p>` : "");
   const flavor = flavorRows.filter(Boolean).length ? `<div class="flavor">${flavorRows.filter(Boolean).join("")}</div>` : `<div class="flavor"><span class="fl-empty">No appearance or feats set yet. Tap Edit to add some flair.</span></div>`;
   sheet.innerHTML = `
@@ -1420,6 +1475,8 @@ function openEdit(){
       <div class="input-row"><textarea class="name-input grow" id="eLook" rows="1" maxlength="200" placeholder="How you look">${esc(h.appearance||"")}</textarea><button class="dice-mini" id="eLookD" type="button">\uD83C\uDFB2</button></div></div>
     <div class="edit-field"><label>Defining trait</label>
       <div class="input-row"><textarea class="name-input grow" id="eTrait" rows="1" maxlength="200" placeholder="Temperament, a quirk, a secret">${esc(h.trait||"")}</textarea><button class="dice-mini" id="eTraitD" type="button">\uD83C\uDFB2</button></div></div>
+    <div class="edit-field"><label>Goal</label>
+      <div class="input-row"><textarea class="name-input grow" id="eGoal" rows="1" maxlength="200" placeholder="What your hero is after">${esc(h.goal||"")}</textarea><button class="dice-mini" id="eGoalD" type="button">\uD83C\uDFB2</button></div></div>
     <div class="edit-field"><label>Notable feat</label>
       <select class="feat-select" id="eFeat">${featOptions(h.feat||"")}</select>
       <div class="feat-desc" id="eFeatDesc">${esc(FEAT_MAP[h.feat||""]||"")}</div></div>
@@ -1429,12 +1486,14 @@ function openEdit(){
   $("eNameD").onclick = ()=>{ $("eName").value = genName(); };
   $("eLookD").onclick = ()=>{ $("eLook").value = pick(LOOKS); grow($("eLook")); };
   $("eTraitD").onclick = ()=>{ $("eTrait").value = pick(TRAITS); grow($("eTrait")); };
-  ["eLook","eTrait"].forEach(id=>{ const e=$(id); e.addEventListener("input",()=>grow(e)); grow(e); });
+  $("eGoalD").onclick = ()=>{ $("eGoal").value = pick(GOALS); grow($("eGoal")); };
+  ["eLook","eTrait","eGoal"].forEach(id=>{ const e=$(id); e.addEventListener("input",()=>grow(e)); grow(e); });
   $("eFeat").onchange = ()=>{ $("eFeatDesc").textContent = FEAT_MAP[$("eFeat").value]||""; };
   $("eSave").onclick = ()=>{
     h.name = $("eName").value.trim() || h.name;
     h.appearance = $("eLook").value.trim();
     h.trait = $("eTrait").value.trim();
+    h.goal = $("eGoal").value.trim();
     h.feat = $("eFeat").value || "";
     ov.remove(); closeSheet(); renderAll(); save(); openSheet();
   };
