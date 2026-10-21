@@ -1226,7 +1226,7 @@ async function continueTale(id){
   if(state.hero.caster===undefined){ const _k=CLASS_KIT[state.hero.className]; if(_k){ state.hero.caster=_k.caster||null; if(_k.caster && !(state.hero.cantrips&&state.hero.cantrips.length)){ const _dk=defaultKit(state.hero.className); state.hero.cantrips=_dk.cantrips; state.hero.spells=_dk.spells; } } }
   if(state.hero.feat==="Lucky" && state.hero.luckAvailable==null) state.hero.luckAvailable=true;
   enterPlay(); renderAll(); rebuildStory(); renderDock();
-  requestAnimationFrame(()=>{ scrollStory(); setTimeout(scrollStory,120); setTimeout(scrollStory,420); });
+  requestAnimationFrame(()=>{ scrollStory(); setTimeout(scrollStory,120); setTimeout(()=>{ scrollStory(); updateJumpBtn(); },420); setTimeout(()=>{ scrollStory(); updateJumpBtn(); },900); });
   if(state.hero.hp<=0) die(); else if(state.arcResolved) showFinale();
 }
 
@@ -1566,7 +1566,7 @@ function sendRoll(rollDef, r){
    RENDER \u2014 story
 ===================================================================== */
 function proseHtml(text){ return text.split(/\n\s*\n/).map(p=>`<p>${esc(p.trim()).replace(/\n/g,"<br>")}</p>`).join(""); }
-function scrollStory(){ const s=$("story"); s.scrollTop = s.scrollHeight; }
+function scrollStory(){ const s=$("story"); s.scrollTop = s.scrollHeight; if(typeof updateJumpBtn==="function") updateJumpBtn(); }
 function addPlayerRef(idx){ state.log.push({type:"player", t:idx}); const t=el("div","turn player"); t.innerHTML=`<span class="who">${esc(state.hero.name)}</span>${esc(state.turns[idx].content)}`; $("story").appendChild(t); scrollStory(); }
 function removeLastPlayerDisplay(){ for(let i=state.log.length-1;i>=0;i--){ if(state.log[i].type==="player"){ state.log.splice(i,1); break; } } const n=$("story").querySelectorAll(".turn.player"); if(n.length) n[n.length-1].remove(); }
 function addDmPlaceholder(){ const wrap=el("div","turn dm"); const body=el("div","body"); body.innerHTML=`<span class="thinking">The tale unfolds <i></i><i></i><i></i></span>`; wrap.appendChild(body); $("story").appendChild(wrap); scrollStory();
@@ -1872,7 +1872,7 @@ buildClassGrid();
 buildFeatTiles();
 loadSRD();
 (async()=>{ await migrateStorage(); renderTales(); })();
-function updateJumpBtn(){ const s=$("story"), b=$("jumpLatest"); if(!s||!b) return; const nearBottom = (s.scrollHeight - s.scrollTop - s.clientHeight) < 90; b.classList.toggle("hidden", nearBottom); }
+function updateJumpBtn(){ const s=$("story"), b=$("jumpLatest"); if(!s||!b) return; const scrollable = (s.scrollHeight - s.clientHeight) > 40; b.classList.toggle("hidden", !scrollable); }
 $("story").addEventListener("scroll", updateJumpBtn, {passive:true});
 $("jumpLatest").addEventListener("click", ()=>{ const s=$("story"); try{ s.scrollTo({top:s.scrollHeight, behavior:"smooth"}); }catch(e){ s.scrollTop=s.scrollHeight; } });
 if("serviceWorker" in navigator){ window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }); }
