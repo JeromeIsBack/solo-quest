@@ -123,7 +123,7 @@
   .divider-row span{font-family:var(--disp); font-weight:500; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; white-space:nowrap}
 
   /* ---------- PLAY ---------- */
-  #play{flex:1; display:flex; flex-direction:column; min-height:0}
+  #play{flex:1; display:flex; flex-direction:column; min-height:0; position:relative}
   .hud{position:sticky; top:var(--safe-t); z-index:5; background:linear-gradient(180deg, rgba(12,13,17,.96), rgba(12,13,17,.82) 70%, rgba(12,13,17,0)); backdrop-filter:blur(8px); padding:9px 14px 12px;}
   .hud-row{display:flex; align-items:center; gap:10px}
   .hud-id{flex:1; min-width:0; cursor:pointer}
@@ -194,6 +194,8 @@
   .stopwrap{display:flex; justify-content:center}
   .stop-btn{border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink-dim); border-radius:999px; padding:8px 18px; font-size:.88rem}
 
+  .jump-latest{position:absolute; bottom:calc(86px + var(--safe-b)); right:16px; z-index:6; border:1px solid var(--ember-deep); background:#211b12; color:var(--ember); border-radius:999px; padding:9px 16px; font-family:var(--disp); font-weight:600; font-size:.9rem; box-shadow:0 10px 30px -12px rgba(0,0,0,.8); transition:opacity .2s, transform .2s}
+  .jump-latest:active{transform:translateY(1px)}
   .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(96px + var(--safe-b)); z-index:40; background:#211b12; border:1px solid var(--ember-deep); color:var(--ember); font-family:var(--disp); font-weight:600; padding:10px 20px; border-radius:999px; box-shadow:0 12px 40px -14px rgba(0,0,0,.8); opacity:0; pointer-events:none; transition:opacity .3s, transform .3s}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px)}
 
@@ -305,6 +307,9 @@
   .hp-die{width:52px; height:52px; display:grid; place-items:center; background:linear-gradient(180deg,#f0c766,#d49a37); color:#241a08; font-family:var(--disp); font-weight:800; font-size:1.5rem; border-radius:12px}
   .lu-hp-num{font-family:var(--disp); font-weight:700; font-size:1.3rem; color:var(--crimson)}
   .lu-hp-sub{color:var(--ink-faint); font-size:.82rem}
+  .lu-fetch{font-size:.82rem; color:var(--ember-deep); margin:2px 0 10px; font-style:italic}
+  .lu-fetch.done{color:var(--sage)}
+  .dim-li{color:var(--ink-faint); font-style:italic}
   .asi{display:flex; flex-direction:column; gap:9px; margin-bottom:14px}
   .asi-opt{display:flex; align-items:center; gap:9px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:10px; padding:11px 13px; font-size:.95rem}
   .asi-opt select{margin-left:auto; background:var(--bg-2); border:1px solid var(--panel-edge); border-radius:8px; color:var(--ink); padding:6px 8px; font-size:.9rem}
@@ -417,6 +422,7 @@
       </div>
     </div>
     <div class="story" id="story"></div>
+    <button class="jump-latest hidden" id="jumpLatest">↓ Latest</button>
     <div class="dock" id="dock"></div>
   </section>
 </div>
@@ -493,6 +499,18 @@ const FEATS = [
   {name:"Magic Initiate", desc:"You begin knowing one minor spell from another tradition."},
   {name:"Linguist", desc:"You can read and understand almost any mundane language or cipher."},
   {name:"Charger", desc:"Extra damage when you strike after rushing into reach."},
+  {name:"Athlete", desc:"Nimble and strong \u2014 advantage on checks to climb, jump or clamber up."},
+  {name:"Mobile", desc:"Fast and elusive \u2014 you dart past foes you've struck without reprisal."},
+  {name:"Sentinel", desc:"You punish foes who ignore you \u2014 stop a fleeing enemy with a reaction strike."},
+  {name:"Great Weapon Master", desc:"Trade accuracy for a brutal heavy-weapon blow; a kill or crit grants a bonus attack."},
+  {name:"Sharpshooter", desc:"Ignore cover and long range; trade accuracy for heavy ranged damage."},
+  {name:"War Caster", desc:"Cast with hands full, hold concentration under fire, and cast as an opportunity reaction."},
+  {name:"Resilient", desc:"Shore up a weak saving throw \u2014 you resist a danger others don't."},
+  {name:"Observant", desc:"Little escapes you \u2014 advantage to notice hidden things and read lips."},
+  {name:"Dual Wielder", desc:"Fight well with two weapons, and gain +1 AC while wielding a pair."},
+  {name:"Inspiring Leader", desc:"A short rousing speech grants you and nearby allies temporary HP."},
+  {name:"Savage Attacker", desc:"Once per turn, reroll your weapon damage and keep the better result."},
+  {name:"Mage Slayer", desc:"You disrupt casters \u2014 strike when they cast near you and press their concentration."},
 ];
 const FEAT_MAP = Object.fromEntries(FEATS.map(f=>[f.name,f.desc]));
 // Precise rules the DM must apply for feats that shape outcomes (Tough & Lucky are handled by the app).
@@ -504,7 +522,17 @@ const FEAT_RULES = {
   "Healer":"Grant roughly 50% more HP from rests and first aid via effects.hp.",
   "Magic Initiate":"The hero knows one minor cantrip-level spell; let them use it when fitting.",
   "Linguist":"The hero can read and understand any mundane language or cipher with no check.",
-  "Charger":"When the hero attacks after rushing into reach, add a little extra impact/damage."
+  "Charger":"When the hero attacks after rushing into reach, add a little extra impact/damage.",
+  "Athlete":"Give advantage on checks to climb, jump, or clamber up.",
+  "Observant":"Give advantage on checks to notice hidden creatures, objects, or clues.",
+  "Mobile":"Let the hero disengage freely from a foe they've struck; don't punish the withdrawal.",
+  "Sentinel":"When an adjacent foe tries to flee the hero, allow a reaction strike that can stop them.",
+  "Great Weapon Master":"With a heavy melee weapon the hero may take -5 to hit for +10 damage; a kill or crit grants a bonus attack.",
+  "Sharpshooter":"The hero's ranged attacks ignore cover and long-range penalty; may take -5 to hit for +10 damage.",
+  "War Caster":"The hero holds concentration more easily and can cast with weapon/shield in hand.",
+  "Inspiring Leader":"A short rousing speech grants the hero and nearby allies temporary HP.",
+  "Savage Attacker":"Once per turn the hero rerolls weapon damage and keeps the higher.",
+  "Mage Slayer":"When a caster within reach casts, the hero may strike as a reaction and press their concentration."
 };
 
 /* ===================== 5e CHARACTER SYSTEM (bundled SRD) ===================== */
@@ -559,7 +587,25 @@ const SPELLS = {
   flamingsphere:{n:"Flaming Sphere",l:2,s:"Conjuration",cast:"Action",rng:"60 ft",d:"A rolling 5-ft fire sphere, 2d6 fire on contact."},
   web:{n:"Web",l:2,s:"Conjuration",cast:"Action",rng:"60 ft",d:"Fills a 20-ft cube with restraining webs."},
   blur:{n:"Blur",l:2,s:"Illusion",cast:"Action",rng:"Self",d:"Attackers have disadvantage against you."},
-  moonbeam:{n:"Moonbeam",l:2,s:"Evocation",cast:"Action",rng:"120 ft",d:"A beam of light, 2d10 radiant, movable each turn."}
+  moonbeam:{n:"Moonbeam",l:2,s:"Evocation",cast:"Action",rng:"120 ft",d:"A beam of light, 2d10 radiant, movable each turn."},
+  fireball:{n:"Fireball",l:3,s:"Evocation",cast:"Action",rng:"150 ft",d:"20-ft radius, DEX save, 8d6 fire (half on save)."},
+  lightningbolt:{n:"Lightning Bolt",l:3,s:"Evocation",cast:"Action",rng:"100-ft line",d:"DEX save, 8d6 lightning (half on save)."},
+  counterspell:{n:"Counterspell",l:3,s:"Abjuration",cast:"Reaction",rng:"60 ft",d:"Interrupt and negate a spell as it is cast."},
+  fly:{n:"Fly",l:3,s:"Transmutation",cast:"Action",rng:"Touch",d:"A creature gains a 60-ft flying speed for 10 minutes."},
+  haste:{n:"Haste",l:3,s:"Transmutation",cast:"Action",rng:"30 ft",d:"+2 AC, double speed, and one extra action each turn."},
+  dispelmagic:{n:"Dispel Magic",l:3,s:"Abjuration",cast:"Action",rng:"120 ft",d:"End a spell affecting a creature or object."},
+  revivify:{n:"Revivify",l:3,s:"Necromancy",cast:"Action",rng:"Touch",d:"Return a creature dead under a minute to life at 1 HP."},
+  spiritguardians:{n:"Spirit Guardians",l:3,s:"Conjuration",cast:"Action",rng:"Self (15 ft)",d:"Spectral guardians deal 3d8 to foes and halve their speed."},
+  hypnoticpattern:{n:"Hypnotic Pattern",l:3,s:"Illusion",cast:"Action",rng:"120 ft",d:"WIS save or charmed and incapacitated by swirling lights."},
+  masshealingword:{n:"Mass Healing Word",l:3,s:"Evocation",cast:"Bonus",rng:"60 ft",d:"Heal up to six creatures 1d4 + your modifier."}
+};
+const EXTRA_SPELLS={
+  Wizard:["fireball","lightningbolt","counterspell","fly","haste","dispelmagic","hypnoticpattern"],
+  Sorcerer:["fireball","lightningbolt","counterspell","fly","haste","hypnoticpattern"],
+  Cleric:["revivify","spiritguardians","dispelmagic","masshealingword"],
+  Druid:["dispelmagic","fly"],
+  Bard:["hypnoticpattern","dispelmagic","fly","counterspell"],
+  Warlock:["counterspell","fly","hypnoticpattern","dispelmagic"]
 };
 
 /* Spell slot tables (index by level). Full = Bard/Cleric/Druid/Sorcerer/Wizard. */
@@ -614,7 +660,11 @@ const BACKGROUNDS = {
   "Folk Hero":{d:"A commoner risen to local legend.",skills:"Animal Handling, Survival"},
   Noble:{d:"Born to privilege and fluent in courtly power.",skills:"History, Persuasion"},
   Outlander:{d:"Raised in the wilds, far from any city.",skills:"Athletics, Survival"},
-  Charlatan:{d:"A con artist with a false identity always ready.",skills:"Deception, Sleight of Hand"}
+  Charlatan:{d:"A con artist with a false identity always ready.",skills:"Deception, Sleight of Hand"},
+  Hermit:{d:"Years of seclusion left you with a strange discovery.",skills:"Medicine, Religion"},
+  Entertainer:{d:"You have lived on applause and the open road.",skills:"Acrobatics, Performance"},
+  "Guild Artisan":{d:"A skilled craftsperson with a guild at your back.",skills:"Insight, Persuasion"},
+  Sailor:{d:"You know ships, ropes, and rough harbor towns.",skills:"Athletics, Perception"}
 };
 /* ---- equipment (bundled SRD) ---- */
 const WEAPONS={
@@ -653,7 +703,7 @@ const ARMORS={
   splint:{n:"Splint (heavy)",base:17,maxDex:0},
   plate:{n:"Plate (heavy)",base:18,maxDex:0}
 };
-const GEAR_POOL=["Explorer's pack","Dungeoneer's pack","Diplomat's pack","Thieves' tools","Healer's kit","Herbalism kit","Holy symbol","Arcane focus","Druidic focus","Component pouch","Spellbook","Rope (50 ft)","Grappling hook","Lantern","10 torches","Tinderbox","Bedroll","Rations (5 days)","Waterskin","Crowbar","Hunting trap","Quiver (20 arrows)","Smoke pellet","Disguise kit","Climbing gear","Manacles","Signal whistle"];
+const GEAR_POOL=["Explorer's pack","Dungeoneer's pack","Diplomat's pack","Thieves' tools","Healer's kit","Herbalism kit","Holy symbol","Arcane focus","Druidic focus","Component pouch","Spellbook","Rope (50 ft)","Grappling hook","Lantern","10 torches","Tinderbox","Bedroll","Rations (5 days)","Waterskin","Crowbar","Hunting trap","Quiver (20 arrows)","Smoke pellet","Disguise kit","Climbing gear","Manacles","Signal whistle","Spyglass","Ink and quill","Hooded lantern","Flask of oil","Vial of acid","Antitoxin","Ball bearings","Chalk"];
 const LOADOUT={
   Barbarian:{weapons:["greataxe","handaxe"],armor:"none",shield:false,gear:["Explorer's pack","Bedroll","Rations (5 days)"]},
   Bard:{weapons:["rapier","dagger"],armor:"leather",shield:false,gear:["Diplomat's pack","Lantern"]},
@@ -683,6 +733,8 @@ function computeAC(cls, armorId, shield, ab){
 function profBonus(lv){ return Math.floor((lv-1)/4)+2; }
 function slotsFor(c,lv){ if(!c) return null; if(c.type==="full") return (FULL_SLOTS[lv]||[]).slice(); if(c.type==="half") return (HALF_SLOTS[lv]||[]).slice(); if(c.type==="pact"){ const p=PACT_SLOTS[lv]; return p?{pact:true,count:p.s,lvl:p.l}:null; } return null; }
 function highestSpellLevel(c,lv){ const s=slotsFor(c,lv); if(!s) return 0; if(s.pact) return s.lvl; return s.length; }
+function resolveSpell(x){ return (typeof x==="string") ? SPELLS[x] : x; }
+function classSpellList(cn){ const kit=CLASS_KIT[cn]||{}; return [...(kit.spellList||[]), ...((typeof EXTRA_SPELLS!=="undefined"&&EXTRA_SPELLS[cn])||[])]; }
 function defaultKit(cls){ const k=CLASS_KIT[cls]; if(!k||!k.caster) return {cantrips:[],spells:[]}; const c=k.spellList.filter(id=>SPELLS[id].l===0).slice(0,k.startCantrips); const s=k.spellList.filter(id=>SPELLS[id].l===1).slice(0,k.startSpells); return {cantrips:c,spells:s}; }
 /* ===== detailed-build state ===== */
 let detailedOn=false, rolledVals=[], abAssign={}, selectedBg="", chosenCantrips=[], chosenSpells=[];
@@ -698,15 +750,17 @@ function kitSummary(h){
   const parts=[];
   if(h.background) parts.push(`Background: ${h.background} (skills: ${h.bgSkills||""}).`);
   const kit=CLASS_KIT[h.className];
+  if(h.subclass) parts.push("Subclass: "+h.subclass+".");
   if(kit && kit.actions && kit.actions.length) parts.push("Class actions: "+kit.actions.map(a=>a.n).join(", ")+".");
+  if(h.features && h.features.length) parts.push("Features: "+h.features.map(f=>f.n).join(", ")+".");
   if(h.caster){
     const dc=8+profBonus(h.level)+mod(h.ab[h.caster.abil]);
     const atk=profBonus(h.level)+mod(h.ab[h.caster.abil]);
     parts.push(`Spellcasting: ${ABBR[h.caster.abil]}-based, save DC ${dc}, attack +${atk}.`);
     const slots=slotsFor(h.caster,h.level);
     if(slots){ if(slots.pact) parts.push(`Pact slots: ${slots.count} × level-${slots.lvl}.`); else if(slots.length) parts.push("Spell slots: "+slots.map((n,i)=>`L${i+1}×${n}`).join(", ")+"."); }
-    if(h.cantrips&&h.cantrips.length) parts.push("Cantrips: "+h.cantrips.map(k=>SPELLS[k]?SPELLS[k].n:k).join(", ")+".");
-    if(h.spells&&h.spells.length) parts.push("Known spells: "+h.spells.map(k=>SPELLS[k]?SPELLS[k].n:k).join(", ")+".");
+    if(h.cantrips&&h.cantrips.length) parts.push("Cantrips: "+h.cantrips.map(k=>{const s=resolveSpell(k);return s?s.n:k;}).join(", ")+".");
+    if(h.spells&&h.spells.length) parts.push("Known spells: "+h.spells.map(k=>{const s=resolveSpell(k);return s?s.n:k;}).join(", ")+".");
   }
   return parts.length ? "\nCHARACTER KIT (the hero can use these; apply their effects when the player uses them): "+parts.join(" ") : "";
 }
@@ -715,9 +769,10 @@ function kitSummary(h){
 function spellsSheetHtml(h){
   const kit=CLASS_KIT[h.className]; if(!kit) return "";
   let out="";
-  if(kit.actions && kit.actions.length){
+  const featItems=[...(kit.actions||[]), ...((h.features||[]))];
+  if(featItems.length){
     out+=`<div class="sec-lab">Actions &amp; features</div><ul class="spell-list">`+
-      kit.actions.map(a=>`<li><b>${esc(a.n)}</b> — ${esc(a.d)}</li>`).join("")+`</ul>`;
+      featItems.map(a=>`<li><b>${esc(a.n)}</b>${a.d?` — ${esc(a.d)}`:""}</li>`).join("")+`</ul>`;
   }
   if(h.caster){
     const dc=8+profBonus(h.level)+mod(h.ab[h.caster.abil]);
@@ -727,8 +782,8 @@ function spellsSheetHtml(h){
     if(slots){ if(slots.pact) slotTxt=`${slots.count} pact slot(s) at level ${slots.lvl}`; else if(slots.length) slotTxt=slots.map((n,i)=>`L${i+1}: ${n}`).join(" · "); }
     out+=`<div class="sec-lab">Spellcasting</div>`+
       `<div class="cast-line">${ABBR[h.caster.abil]} · Save DC <b>${dc}</b> · Attack <b>+${atk}</b>${slotTxt?` · Slots: ${esc(slotTxt)}`:""}</div>`;
-    const cants=(h.cantrips||[]).map(k=>SPELLS[k]).filter(Boolean);
-    const spls=(h.spells||[]).map(k=>SPELLS[k]).filter(Boolean).sort((a,b)=>a.l-b.l);
+    const cants=(h.cantrips||[]).map(resolveSpell).filter(Boolean);
+    const spls=(h.spells||[]).map(resolveSpell).filter(Boolean).sort((a,b)=>a.l-b.l);
     if(cants.length) out+=`<div class="spell-group">Cantrips (at will)</div><ul class="spell-list">`+cants.map(s=>`<li><b>${esc(s.n)}</b> <span class="sp-meta">${esc(s.cast)} · ${esc(s.rng)}</span><br><span class="sp-d">${esc(s.d)}</span></li>`).join("")+`</ul>`;
     if(spls.length) out+=`<div class="spell-group">Spells</div><ul class="spell-list">`+spls.map(s=>`<li><b>${esc(s.n)}</b> <span class="sp-meta">L${s.l} · ${esc(s.cast)} · ${esc(s.rng)}</span><br><span class="sp-d">${esc(s.d)}</span></li>`).join("")+`</ul>`;
     if(!cants.length && !spls.length) out+=`<div class="inv-empty">No spells known yet — you gain them as you level up.</div>`;
@@ -740,8 +795,8 @@ function spellsSheetHtml(h){
 function learnableSpellsAt(h, lvl){
   const kit=CLASS_KIT[h.className]; if(!kit||!kit.caster) return [];
   const hi=highestSpellLevel(h.caster, lvl);
-  const known=new Set([...(h.cantrips||[]),...(h.spells||[])]);
-  return kit.spellList.filter(id=>!known.has(id) && SPELLS[id].l>=1 && SPELLS[id].l<=hi);
+  const known=new Set((h.spells||[]).map(x=>typeof x==="string"?x:(x&&x.n)).concat((h.cantrips||[]).map(x=>typeof x==="string"?x:(x&&x.n))));
+  return classSpellList(h.className).filter(id=>!known.has(id) && SPELLS[id] && SPELLS[id].l>=1 && SPELLS[id].l<=hi);
 }
 
 /* ===== detailed build UI ===== */
@@ -837,30 +892,63 @@ function renderPick(hostId, ids, get, set, max){
 }
 
 /* ===== level-up modal ===== */
+function splitFeat(str){ str=String(str); const i=str.indexOf(" \u2014 "); return i>0 ? {n:str.slice(0,i), d:str.slice(i+3)} : {n:str, d:""}; }
+async function fetchLevelKit(h){
+  const sys="You are a precise D&D 5e (SRD) rules assistant. Output ONLY a JSON object (no prose): {\"features\":[{\"n\":\"name\",\"d\":\"one short line\"}],\"subclassOptions\":[\"Name\"],\"spells\":[{\"n\":\"Spell\",\"l\":3,\"cast\":\"Action\",\"rng\":\"range\",\"d\":\"one short line\"}]}. 'features' = class features gained EXACTLY at this level. 'subclassOptions' = the subclass choices IF this class picks (or should already have picked) its subclass by this level AND none is set; else []. 'spells' = if a spellcaster, up to 12 iconic SRD spells they can now learn up to their current max spell level; else []. Each 'd' under 16 words. SRD content only.";
+  const usr="Class: "+h.className+". New level: "+h.level+". Current subclass: "+(h.subclass||"none")+". Spellcaster: "+(h.caster?("yes, "+h.caster.type+", "+ABBR[h.caster.abil]):"no")+". Max spell level castable: "+(h.caster?highestSpellLevel(h.caster,h.level):0)+". Return the JSON now.";
+  try{
+    const ctl=new AbortController(); const to=setTimeout(()=>{ try{ctl.abort();}catch(e){} }, 60000);
+    const txt=await streamDM(sys,[{role:"user",content:usr}],{max_tokens:800, signal:ctl.signal});
+    clearTimeout(to);
+    const a=txt.indexOf("{"), b=txt.lastIndexOf("}"); if(a<0||b<=a) return null;
+    const o=JSON.parse(txt.slice(a,b+1));
+    return { features:Array.isArray(o.features)?o.features.filter(f=>f&&f.n):[], subclassOptions:Array.isArray(o.subclassOptions)?o.subclassOptions.filter(x=>typeof x==="string"&&x.trim()):[], spells:Array.isArray(o.spells)?o.spells.filter(s=>s&&s.n):[] };
+  }catch(e){ return null; }
+}
 function openLevelUp(gained){
   if($("luOverlay")) return;
   const h=state.hero; const kit=CLASS_KIT[h.className]||{};
-  // roll HP for each gained level
   let hpGain=0; const rolls=[];
-  gained.forEach(()=>{ const r=1+Math.floor(Math.random()*h.hitDie); const g=Math.max(1,r+mod(h.ab.con)); hpGain+=g; rolls.push(r); });
-  const feats=[]; gained.forEach(l=>{ if(kit.feats&&kit.feats[l]) kit.feats[l].forEach(f=>feats.push(`L${l}: ${f}`)); });
+  gained.forEach(()=>{ const r=1+Math.floor(Math.random()*h.hitDie); hpGain+=Math.max(1,r+mod(h.ab.con)); rolls.push(r); });
   const asiLevels=gained.filter(l=>[4,8,12,16,19].includes(l));
   const casterLevels=h.caster?gained.length:0;
+  const spellPicks = h.caster ? (h.className==="Wizard" ? 2*casterLevels : casterLevels) : 0;
+
+  let luFeatures=[]; gained.forEach(l=>{ if(kit.feats&&kit.feats[l]) kit.feats[l].forEach(str=>luFeatures.push(splitFeat(str))); });
+  let luOpts=[]; const seenSp=new Set();
+  if(h.caster){ learnableSpellsAt(h,h.level).forEach(k=>{ const o=SPELLS[k]; if(o&&!seenSp.has(o.n)){ luOpts.push({id:k,obj:o}); seenSp.add(o.n); } }); }
+  let luSel=[], chosenSubclass="", subOptions=[];
 
   const ov=el("div","overlay"); ov.id="luOverlay";
   const sheet=el("div","sheet");
-  let html=`<div class="sheet-h"><div class="sheet-title">⚔️ Level ${h.level}</div></div>
-    <div class="lu-hp"><div class="lu-hp-roll">${d20HpSvg(rolls)}</div><div><div class="lu-hp-num">+${hpGain} HP</div><div class="lu-hp-sub">rolled ${rolls.join(" + ")} on d${h.hitDie}${mod(h.ab.con)?` ${signed(mod(h.ab.con))} CON each`:""}</div></div></div>`;
-  if(feats.length) html+=`<div class="sec-lab">New features</div><ul class="spell-list">`+feats.map(f=>`<li>${esc(f)}</li>`).join("")+`</ul>`;
-  asiLevels.forEach((l,idx)=>{ html+=asiBlock(idx); });
-  if(casterLevels){ const learn=learnableSpellsAt(h,h.level); if(learn.length){ html+=`<div class="sec-lab">Learn a new spell <span class="opt">pick up to ${casterLevels}</span></div><div class="pick-list" id="luSpells"></div>`; } }
-  html+=`<div class="sheet-btns"><button class="begin" id="luConfirm" style="margin-top:4px">Confirm level up</button></div>`;
-  sheet.innerHTML=html; ov.appendChild(sheet); document.body.appendChild(ov);
+  sheet.innerHTML=`<div class="sheet-h"><div class="sheet-title">\u2694\uFE0F Level ${h.level}</div></div>
+    <div class="lu-hp"><div class="lu-hp-roll">${d20HpSvg(rolls)}</div><div><div class="lu-hp-num">+${hpGain} HP</div><div class="lu-hp-sub">rolled ${rolls.join(" + ")} on d${h.hitDie}${mod(h.ab.con)?` ${signed(mod(h.ab.con))} CON each`:""}</div></div></div>
+    <div class="lu-fetch" id="luFetch"><span class="thinking">Fetching your 5e advancement <i></i><i></i><i></i></span></div>
+    <div class="sec-lab">New features</div><ul class="spell-list" id="luFeat"></ul>
+    <div id="luAsi"></div>
+    <div id="luSub"></div>
+    ${h.caster?`<div class="sec-lab">Learn spells <span class="opt">pick up to ${spellPicks}</span></div><div class="pick-list" id="luSpells"></div>`:""}
+    <div class="sheet-btns"><button class="begin" id="luConfirm" style="margin-top:4px">Confirm level up</button></div>`;
+  ov.appendChild(sheet); document.body.appendChild(ov);
 
   const asiPick={};
-  asiLevels.forEach((l,idx)=>wireAsi(idx, asiPick));
-  let luSpellSel=[];
-  if(casterLevels){ const learn=learnableSpellsAt(h,h.level); if(learn.length) renderPick("luSpells", learn, ()=>luSpellSel, v=>luSpellSel=v, casterLevels); }
+  if(asiLevels.length){ let ah=""; asiLevels.forEach((l,idx)=>ah+=asiBlock(idx)); $("luAsi").innerHTML=ah; asiLevels.forEach((l,idx)=>wireAsi(idx,asiPick)); }
+
+  const drawFeat=()=>{ const el2=$("luFeat"); if(!el2) return; el2.innerHTML = luFeatures.length ? luFeatures.map(f=>`<li><b>${esc(f.n)}</b>${f.d?` \u2014 ${esc(f.d)}`:""}</li>`).join("") : `<li class="dim-li">No new feature at this level.</li>`; };
+  const drawSpells=()=>{ const host=$("luSpells"); if(!host) return; host.innerHTML=luOpts.length ? luOpts.map(o=>{ const on=luSel.includes(o.id); const full=luSel.length>=spellPicks&&!on; return `<button type="button" class="pick ${on?'on':''} ${full?'dim':''}" data-id="${esc(o.id)}"><b>${esc(o.obj.n)}</b><span class="pick-d">L${o.obj.l} \u00B7 ${esc(o.obj.d||"")}</span></button>`; }).join("") : `<div class="inv-empty">No new spells available right now.</div>`; host.querySelectorAll(".pick").forEach(b=>{ b.onclick=()=>{ const id=b.dataset.id; if(luSel.includes(id)) luSel=luSel.filter(x=>x!==id); else { if(luSel.length>=spellPicks) return; luSel.push(id); } drawSpells(); }; }); };
+  const drawSub=()=>{ const host=$("luSub"); if(!host) return; if(!subOptions.length || h.subclass){ host.innerHTML=""; return; } host.innerHTML=`<div class="sec-lab">Choose a subclass</div><div class="pick-list">`+subOptions.map(s=>`<button type="button" class="pick ${chosenSubclass===s?'on':''}" data-s="${esc(s)}"><b>${esc(s)}</b></button>`).join("")+`</div>`; host.querySelectorAll(".pick").forEach(b=>{ b.onclick=()=>{ chosenSubclass=b.dataset.s; drawSub(); }; }); };
+  drawFeat(); drawSpells(); drawSub();
+
+  fetchLevelKit(h).then(res=>{
+    const note=$("luFetch");
+    if(!res){ if(note) note.textContent="Using the built-in 5e core (couldn\u2019t fetch extra detail)."; return; }
+    const seenF=new Set(luFeatures.map(f=>f.n));
+    res.features.forEach(f=>{ if(f.n && !seenF.has(f.n)){ luFeatures.push({n:f.n,d:f.d||""}); seenF.add(f.n); } });
+    if(h.caster){ res.spells.forEach(sp=>{ if(sp.n && !seenSp.has(sp.n)){ luOpts.push({id:"g:"+sp.n, obj:{n:sp.n,l:sp.l||1,d:sp.d||"",cast:sp.cast||"Action",rng:sp.rng||""}}); seenSp.add(sp.n); } }); }
+    subOptions=res.subclassOptions||[];
+    if(note){ note.textContent="5e advancement loaded."; note.classList.add("done"); }
+    drawFeat(); drawSpells(); drawSub();
+  });
 
   $("luConfirm").onclick=()=>{
     const conBefore=mod(h.ab.con);
@@ -868,8 +956,11 @@ function openLevelUp(gained){
     asiLevels.forEach((l,idx)=>{ const a=asiPick[idx]; if(!a) return; if(a.kind==="asi"&&a.ab){ h.ab[a.ab]=(h.ab[a.ab]||10)+2; } else if(a.kind==="feat"&&a.feat){ h.feat=a.feat; if(a.feat==="Tough") h.maxHp+=4, h.hp+=4; if(a.feat==="Lucky") h.luckAvailable=true; } });
     const conAfter=mod(h.ab.con); if(conAfter>conBefore){ const d=(conAfter-conBefore)*h.level; h.maxHp+=d; h.hp+=d; }
     if(h.armor){ h.ac=computeAC(h.className, h.armor, h.shield, h.ab); }
-    if(luSpellSel.length) h.spells=(h.spells||[]).concat(luSpellSel);
-    ov.remove(); toast("⚜ Level "+h.level+"!"); renderAll(); save();
+    if(chosenSubclass) h.subclass=chosenSubclass;
+    if(luSel.length){ h.spells=h.spells||[]; luSel.forEach(id=>{ const o=luOpts.find(x=>x.id===id); if(!o) return; if(String(id).indexOf("g:")===0) h.spells.push(o.obj); else h.spells.push(id); }); }
+    const existing=new Set((h.features||[]).map(f=>f.n)); h.features=h.features||[];
+    luFeatures.forEach(f=>{ if(!existing.has(f.n)){ h.features.push({n:f.n,d:f.d||""}); existing.add(f.n); } });
+    ov.remove(); toast("\u269C Level "+h.level+"!"); renderAll(); save();
   };
 }
 function asiBlock(idx){
@@ -1566,7 +1657,7 @@ function openSheet(){
   const flavor = flavorRows.filter(Boolean).length ? `<div class="flavor">${flavorRows.filter(Boolean).join("")}</div>` : `<div class="flavor"><span class="fl-empty">No appearance or feats set yet. Tap Edit to add some flair.</span></div>`;
   sheet.innerHTML = `
     <div class="sheet-h"><div class="sheet-title">${h.emblem} ${esc(h.name)}</div><button class="x-btn" id="sheetX">\u2715</button></div>
-    <div class="sheet-sub">${h.race?esc(h.race)+" ":""}${h.className} \u00B7 Level ${h.level} \u00B7 AC ${h.ac} \u00B7 ${h.hp}/${h.maxHp} HP \u00B7 ${h.gold} gold</div>
+    <div class="sheet-sub">${h.race?esc(h.race)+" ":""}${h.className}${h.subclass?" ("+esc(h.subclass)+")":""} \u00B7 Level ${h.level} \u00B7 AC ${h.ac} \u00B7 ${h.hp}/${h.maxHp} HP \u00B7 ${h.gold} gold</div>
     <div class="sec-lab">Who you are <button class="edit-link" id="editBtn">\u270E Edit</button></div>
     ${flavor}
     ${storyPanel()}
@@ -1781,6 +1872,9 @@ buildClassGrid();
 buildFeatTiles();
 loadSRD();
 (async()=>{ await migrateStorage(); renderTales(); })();
+function updateJumpBtn(){ const s=$("story"), b=$("jumpLatest"); if(!s||!b) return; const nearBottom = (s.scrollHeight - s.scrollTop - s.clientHeight) < 90; b.classList.toggle("hidden", nearBottom); }
+$("story").addEventListener("scroll", updateJumpBtn, {passive:true});
+$("jumpLatest").addEventListener("click", ()=>{ const s=$("story"); try{ s.scrollTo({top:s.scrollHeight, behavior:"smooth"}); }catch(e){ s.scrollTop=s.scrollHeight; } });
 if("serviceWorker" in navigator){ window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }); }
 </script>
 </body>
