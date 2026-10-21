@@ -308,6 +308,15 @@
   .asi{display:flex; flex-direction:column; gap:9px; margin-bottom:14px}
   .asi-opt{display:flex; align-items:center; gap:9px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:10px; padding:11px 13px; font-size:.95rem}
   .asi-opt select{margin-left:auto; background:var(--bg-2); border:1px solid var(--panel-edge); border-radius:8px; color:var(--ink); padding:6px 8px; font-size:.9rem}
+  .armor-list{display:grid; grid-template-columns:1fr 1fr; gap:7px}
+  .armor-opt{text-align:left; background:var(--panel); border:1px solid var(--panel-edge); border-radius:10px; padding:10px 12px; color:var(--ink); font-size:.92rem; display:flex; flex-direction:column; gap:2px}
+  .armor-opt .arm-ac{color:var(--ink-faint); font-size:.76rem}
+  .armor-opt.on{border-color:var(--ember); background:linear-gradient(180deg,rgba(224,169,74,.12),rgba(224,169,74,.02)); box-shadow:0 0 0 1px var(--ember) inset}
+  .shield-row{display:flex; align-items:center; justify-content:space-between; gap:14px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:10px; padding:11px 13px; margin-top:8px; font-size:.95rem}
+  .shield-row small{color:var(--ink-faint)}
+  .ac-badge{margin-top:10px; text-align:center; background:var(--panel); border:1px solid var(--ember-deep); border-radius:10px; padding:10px; font-family:var(--disp); font-size:1.05rem; color:var(--ink)}
+  .ac-badge b{color:var(--ember); font-size:1.3rem}
+  .ac-badge .ac-sub{font-family:var(--body); font-weight:400; font-size:.8rem; color:var(--ink-faint)}
   @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important} }
 </style>
 </head>
@@ -607,6 +616,68 @@ const BACKGROUNDS = {
   Outlander:{d:"Raised in the wilds, far from any city.",skills:"Athletics, Survival"},
   Charlatan:{d:"A con artist with a false identity always ready.",skills:"Deception, Sleight of Hand"}
 };
+/* ---- equipment (bundled SRD) ---- */
+const WEAPONS={
+  longsword:{n:"Longsword",d:"1d8 slashing (versatile 1d10)"},
+  greatsword:{n:"Greatsword",d:"2d6 slashing (heavy)"},
+  greataxe:{n:"Greataxe",d:"1d12 slashing (heavy)"},
+  battleaxe:{n:"Battleaxe",d:"1d8 slashing (versatile)"},
+  warhammer:{n:"Warhammer",d:"1d8 bludgeoning (versatile)"},
+  maul:{n:"Maul",d:"2d6 bludgeoning (heavy)"},
+  mace:{n:"Mace",d:"1d6 bludgeoning"},
+  rapier:{n:"Rapier",d:"1d8 piercing (finesse)"},
+  shortsword:{n:"Shortsword",d:"1d6 piercing (finesse, light)"},
+  scimitar:{n:"Scimitar",d:"1d6 slashing (finesse, light)"},
+  dagger:{n:"Dagger",d:"1d4 piercing (finesse, light, thrown)"},
+  handaxe:{n:"Handaxe",d:"1d6 slashing (light, thrown)"},
+  spear:{n:"Spear",d:"1d6 piercing (thrown, versatile)"},
+  quarterstaff:{n:"Quarterstaff",d:"1d6 bludgeoning (versatile 1d8)"},
+  club:{n:"Club",d:"1d4 bludgeoning (light)"},
+  longbow:{n:"Longbow",d:"1d8 piercing (heavy, 150/600)"},
+  shortbow:{n:"Shortbow",d:"1d6 piercing (80/320)"},
+  lightcrossbow:{n:"Light Crossbow",d:"1d8 piercing (80/320)"},
+  sling:{n:"Sling",d:"1d4 bludgeoning (30/120)"}
+};
+const ARMORS={
+  none:{n:"No armor",base:10,maxDex:null},
+  padded:{n:"Padded (light)",base:11,maxDex:null},
+  leather:{n:"Leather (light)",base:11,maxDex:null},
+  studded:{n:"Studded leather (light)",base:12,maxDex:null},
+  hide:{n:"Hide (medium)",base:12,maxDex:2},
+  chainshirt:{n:"Chain shirt (medium)",base:13,maxDex:2},
+  scalemail:{n:"Scale mail (medium)",base:14,maxDex:2},
+  breastplate:{n:"Breastplate (medium)",base:14,maxDex:2},
+  halfplate:{n:"Half plate (medium)",base:15,maxDex:2},
+  ringmail:{n:"Ring mail (heavy)",base:14,maxDex:0},
+  chainmail:{n:"Chain mail (heavy)",base:16,maxDex:0},
+  splint:{n:"Splint (heavy)",base:17,maxDex:0},
+  plate:{n:"Plate (heavy)",base:18,maxDex:0}
+};
+const GEAR_POOL=["Explorer's pack","Dungeoneer's pack","Diplomat's pack","Thieves' tools","Healer's kit","Herbalism kit","Holy symbol","Arcane focus","Druidic focus","Component pouch","Spellbook","Rope (50 ft)","Grappling hook","Lantern","10 torches","Tinderbox","Bedroll","Rations (5 days)","Waterskin","Crowbar","Hunting trap","Quiver (20 arrows)","Smoke pellet","Disguise kit","Climbing gear","Manacles","Signal whistle"];
+const LOADOUT={
+  Barbarian:{weapons:["greataxe","handaxe"],armor:"none",shield:false,gear:["Explorer's pack","Bedroll","Rations (5 days)"]},
+  Bard:{weapons:["rapier","dagger"],armor:"leather",shield:false,gear:["Diplomat's pack","Lantern"]},
+  Cleric:{weapons:["mace"],armor:"scalemail",shield:true,gear:["Holy symbol","Healer's kit"]},
+  Druid:{weapons:["quarterstaff","scimitar"],armor:"leather",shield:true,gear:["Druidic focus","Herbalism kit"]},
+  Fighter:{weapons:["longsword","lightcrossbow"],armor:"chainmail",shield:true,gear:["Explorer's pack","Rations (5 days)"]},
+  Monk:{weapons:["shortsword"],armor:"none",shield:false,gear:["Explorer's pack","10 torches"]},
+  Paladin:{weapons:["longsword","spear"],armor:"chainmail",shield:true,gear:["Holy symbol","Bedroll"]},
+  Ranger:{weapons:["longbow","shortsword"],armor:"studded",shield:false,gear:["Quiver (20 arrows)","Explorer's pack","Hunting trap"]},
+  Rogue:{weapons:["shortsword","dagger"],armor:"leather",shield:false,gear:["Thieves' tools","Grappling hook","Smoke pellet"]},
+  Sorcerer:{weapons:["dagger"],armor:"none",shield:false,gear:["Arcane focus","Explorer's pack"]},
+  Warlock:{weapons:["lightcrossbow","dagger"],armor:"leather",shield:false,gear:["Arcane focus","Bedroll"]},
+  Wizard:{weapons:["quarterstaff"],armor:"none",shield:false,gear:["Spellbook","Component pouch","10 torches"]}
+};
+function computeAC(cls, armorId, shield, ab){
+  const dx=mod(ab.dex); const a=ARMORS[armorId];
+  let base;
+  if(armorId==="none" || !a){
+    if(cls==="Barbarian") base=10+dx+mod(ab.con);
+    else if(cls==="Monk") base=10+dx+mod(ab.wis);
+    else base=10+dx;
+  } else { base=a.base + (a.maxDex==null ? dx : Math.min(dx, a.maxDex)); }
+  return base + (shield?2:0);
+}
 
 /* ---- 5e helpers ---- */
 function profBonus(lv){ return Math.floor((lv-1)/4)+2; }
@@ -615,6 +686,7 @@ function highestSpellLevel(c,lv){ const s=slotsFor(c,lv); if(!s) return 0; if(s.
 function defaultKit(cls){ const k=CLASS_KIT[cls]; if(!k||!k.caster) return {cantrips:[],spells:[]}; const c=k.spellList.filter(id=>SPELLS[id].l===0).slice(0,k.startCantrips); const s=k.spellList.filter(id=>SPELLS[id].l===1).slice(0,k.startSpells); return {cantrips:c,spells:s}; }
 /* ===== detailed-build state ===== */
 let detailedOn=false, rolledVals=[], abAssign={}, selectedBg="", chosenCantrips=[], chosenSpells=[];
+let chosenWeapons=[], chosenArmor="", chosenShield=false, chosenGear=[], gearForClass=null;
 
 function rollScores(){ rolledVals=[0,0,0,0,0,0].map(()=>{ const r=[0,0,0,0].map(()=>1+Math.floor(Math.random()*6)).sort((a,b)=>a-b); return r[1]+r[2]+r[3]; }); }
 function autoAssign(){ const cls=CLASSES[selectedClass]; const pr=ORDER.slice().sort((a,b)=>(cls.ab[b]||10)-(cls.ab[a]||10)); const sorted=rolledVals.map((v,i)=>({v,i})).sort((a,b)=>b.v-a.v); abAssign={}; pr.forEach((k,i)=>{ abAssign[k]=sorted[i].i; }); }
@@ -673,6 +745,38 @@ function learnableSpellsAt(h, lvl){
 }
 
 /* ===== detailed build UI ===== */
+function renderItemPick(hostId, items, get, set, max){
+  const host=$(hostId); if(!host) return;
+  const draw=()=>{ const cur=get();
+    host.innerHTML=items.map(it=>{ const on=cur.includes(it.id); const full=cur.length>=max && !on;
+      return `<button type="button" class="pick ${on?'on':''} ${full?'dim':''}" data-id="${esc(it.id)}"><b>${esc(it.label)}</b>${it.sub?`<span class="pick-d">${esc(it.sub)}</span>`:""}</button>`; }).join("");
+    host.querySelectorAll(".pick").forEach(b=>{ b.onclick=()=>{ let c=get().slice(); const id=b.dataset.id; if(c.includes(id)) c=c.filter(x=>x!==id); else { if(c.length>=max) return; c.push(id); } set(c); draw(); }; });
+  };
+  draw();
+}
+function updAC(){ const badge=$("acBadge"); if(!badge) return; const ac=computeAC(selectedClass, chosenArmor, chosenShield, finalAb()); badge.innerHTML=`Armor Class <b>${ac}</b> <span class="ac-sub">(${chosenArmor==="none"?"unarmored":esc((ARMORS[chosenArmor]||{}).n||"")}${chosenShield?" + shield":""})</span>`; }
+function renderArmorPick(){
+  const host=$("armPick"); if(!host) return;
+  host.innerHTML=Object.keys(ARMORS).map(id=>{ const a=ARMORS[id]; const lab=a.base===10?"10 + DEX":"base "+a.base; return `<button type="button" class="armor-opt ${id===chosenArmor?'on':''}" data-id="${id}">${esc(a.n)}<span class="arm-ac">${lab}</span></button>`; }).join("");
+  host.querySelectorAll(".armor-opt").forEach(b=>{ b.onclick=()=>{ chosenArmor=b.dataset.id; renderArmorPick(); updAC(); }; });
+}
+function buildGearPick(cls){
+  const host=$("gearPick"); if(!host) return;
+  const ld=LOADOUT[cls]||{weapons:[],armor:"none",shield:false,gear:[]};
+  if(gearForClass!==cls){ chosenWeapons=ld.weapons.slice(); chosenArmor=ld.armor; chosenShield=!!ld.shield; chosenGear=ld.gear.slice(); gearForClass=cls; }
+  host.innerHTML=
+    `<div class="field-label">Weapons <span class="opt">pick up to 3</span></div><div class="pick-list" id="wpnPick"></div>
+     <div class="field-label">Armor</div><div class="armor-list" id="armPick"></div>
+     <label class="shield-row"><span>Carry a shield <small>+2 AC</small></span><button type="button" class="toggle ${chosenShield?'on':''}" id="shieldTog" role="switch" aria-checked="${chosenShield}"><span class="knob"></span></button></label>
+     <div class="ac-badge" id="acBadge"></div>
+     <div class="field-label">Tools &amp; gear <span class="opt">pick a few</span></div><div class="pick-list" id="gearList"></div>`;
+  renderItemPick("wpnPick", Object.keys(WEAPONS).map(id=>({id,label:WEAPONS[id].n,sub:WEAPONS[id].d})), ()=>chosenWeapons, v=>{chosenWeapons=v;}, 3);
+  renderArmorPick();
+  $("shieldTog").onclick=()=>{ chosenShield=!chosenShield; const b=$("shieldTog"); b.classList.toggle("on",chosenShield); b.setAttribute("aria-checked",chosenShield); updAC(); };
+  const gItems=[...new Set([...GEAR_POOL, ...ld.gear])].map(x=>({id:x,label:x,sub:""}));
+  renderItemPick("gearList", gItems, ()=>chosenGear, v=>{chosenGear=v;}, 8);
+  updAC();
+}
 function buildDetail(){
   const box=$("detailBuild"); if(!box) return;
   if(!detailedOn || !selectedClass){ box.innerHTML=""; return; }
@@ -685,12 +789,14 @@ function buildDetail(){
      <div class="field-label">Background <span class="opt">optional</span></div>
      <div class="tiles bg-tiles" id="bgGrid"></div>
      <div class="tile-detail" id="bgDetail">Tap a background for its skills.</div>
-     <div id="spellPick"></div>`;
+     <div id="spellPick"></div>
+     <div id="gearPick"></div>`;
   renderAbRoll();
   const bg=$("bgGrid");
   Object.keys(BACKGROUNDS).forEach(name=>{ bg.appendChild(tileBtn("", name, ()=>{ selectedBg=name; $("bgDetail").innerHTML=`<b>${esc(name)}</b> · ${esc(BACKGROUNDS[name].skills)}<br><span class="td-sub">${esc(BACKGROUNDS[name].d)}</span>`; })); });
-  $("rerollAb").onclick=()=>{ rollScores(); autoAssign(); renderAbRoll(); };
+  $("rerollAb").onclick=()=>{ rollScores(); autoAssign(); renderAbRoll(); updAC(); };
   buildSpellPick(cls, kit);
+  buildGearPick(cls);
 }
 function renderAbRoll(){
   const wrap=$("abRoll"); if(!wrap) return;
@@ -704,7 +810,7 @@ function renderAbRoll(){
       ${rb?`<span class="ab-rb">+${rb}</span>`:`<span class="ab-rb dim">·</span>`}
       <span class="ab-fin">${fin}</span><span class="ab-m">(${signed(mod(fin))})</span></div>`;
   }).join("");
-  wrap.querySelectorAll(".ab-sel").forEach(sel=>{ sel.onchange=()=>{ const k=sel.dataset.k; const ni=+sel.value; const other=ORDER.find(o=>o!==k && abAssign[o]===ni); if(other) abAssign[other]=abAssign[k]; abAssign[k]=ni; renderAbRoll(); }; });
+  wrap.querySelectorAll(".ab-sel").forEach(sel=>{ sel.onchange=()=>{ const k=sel.dataset.k; const ni=+sel.value; const other=ORDER.find(o=>o!==k && abAssign[o]===ni); if(other) abAssign[other]=abAssign[k]; abAssign[k]=ni; renderAbRoll(); if($("acBadge")) updAC(); }; });
 }
 function buildSpellPick(cls, kit){
   const host=$("spellPick"); if(!host) return;
@@ -761,6 +867,7 @@ function openLevelUp(gained){
     h.maxHp+=hpGain; h.hp+=hpGain;
     asiLevels.forEach((l,idx)=>{ const a=asiPick[idx]; if(!a) return; if(a.kind==="asi"&&a.ab){ h.ab[a.ab]=(h.ab[a.ab]||10)+2; } else if(a.kind==="feat"&&a.feat){ h.feat=a.feat; if(a.feat==="Tough") h.maxHp+=4, h.hp+=4; if(a.feat==="Lucky") h.luckAvailable=true; } });
     const conAfter=mod(h.ab.con); if(conAfter>conBefore){ const d=(conAfter-conBefore)*h.level; h.maxHp+=d; h.hp+=d; }
+    if(h.armor){ h.ac=computeAC(h.className, h.armor, h.shield, h.ab); }
     if(luSpellSel.length) h.spells=(h.spells||[]).concat(luSpellSel);
     ov.remove(); toast("⚜ Level "+h.level+"!"); renderAll(); save();
   };
@@ -1028,6 +1135,7 @@ async function continueTale(id){
   if(state.hero.caster===undefined){ const _k=CLASS_KIT[state.hero.className]; if(_k){ state.hero.caster=_k.caster||null; if(_k.caster && !(state.hero.cantrips&&state.hero.cantrips.length)){ const _dk=defaultKit(state.hero.className); state.hero.cantrips=_dk.cantrips; state.hero.spells=_dk.spells; } } }
   if(state.hero.feat==="Lucky" && state.hero.luckAvailable==null) state.hero.luckAvailable=true;
   enterPlay(); renderAll(); rebuildStory(); renderDock();
+  requestAnimationFrame(()=>{ scrollStory(); setTimeout(scrollStory,120); setTimeout(scrollStory,420); });
   if(state.hero.hp<=0) die(); else if(state.arcResolved) showFinale();
 }
 
@@ -1064,13 +1172,22 @@ function startNewGame(){
     const dk = defaultKit(selectedClass); cantrips=dk.cantrips; spells=dk.spells;
   }
   const caster = kit.caster || null;
+  let inventory, ac, armorId=null, hasShield=false;
+  if(detailedOn){
+    const wpns=chosenWeapons.map(id=>WEAPONS[id]?WEAPONS[id].n:id);
+    const armN = (chosenArmor && chosenArmor!=="none") ? [(ARMORS[chosenArmor].n||"").replace(/ \(.*\)/,"")] : [];
+    const shd = chosenShield ? ["Shield"] : [];
+    inventory=[...wpns, ...armN, ...shd, ...chosenGear];
+    ac=computeAC(selectedClass, chosenArmor, chosenShield, ab);
+    armorId=chosenArmor; hasShield=chosenShield;
+  } else { inventory=[...cls.gear]; ac=cls.ac; }
   state = {
     id: genId(),
     hero:{
       name, race:selectedRace, raceTraits: race?race.traits:"", className:selectedClass, emblem:cls.emblem, level:1,
-      ab, hitDie:cls.hitDie, ac:cls.ac,
+      ab, hitDie:cls.hitDie, ac, armor:armorId, shield:hasShield,
       maxHp, hp:maxHp, gold:15, xp:0,
-      inventory:[...cls.gear], conditions:[],
+      inventory, conditions:[],
       appearance: $("heroLook").value.trim(),
       trait: $("heroTrait").value.trim(),
       goal: $("heroGoal").value.trim(),
@@ -1154,6 +1271,7 @@ function trimmedMessages(){
 
 async function takeTurn(playerText, opts){
   opts = opts || {};
+  if(recapCtl){ try{ recapCtl.abort(); }catch(e){} recapCtl=null; }
   state.turns.push({ role:"user", content: playerText });
   if(!opts.hideAsPlayer) addPlayerRef(state.turns.length-1);
 
@@ -1193,6 +1311,7 @@ async function takeTurn(playerText, opts){
   state.beat = (state.beat||0) + 1;
   renderAll(); renderDock(); pruneStory(); scrollStory(); save();
   if(state.arcResolved) showFinale();
+  if(state.pending && state.pending.weak && !state.pending.roll && shown && shown!=="\u2026") suggestChoices(shown);
   maybeRecap();
 }
 
@@ -1225,7 +1344,7 @@ function salvageData(s){
 
 function applyData(data){
   let sceneChanged=false;
-  if(!data){ state.pending = { choices:[], roll:null }; return {sceneChanged}; }
+  if(!data){ state.pending = { choices:fallbackChoices(), roll:null, weak:true }; return {sceneChanged}; }
   if(typeof data.sceneTitle==="string" && data.sceneTitle.trim() && data.sceneTitle!==state.scene){ state.scene=data.sceneTitle.trim(); sceneChanged=true; }
   if(typeof data.combat==="boolean") state.combat = data.combat;
   if(data.effects && typeof data.effects==="object") applyEffects(data.effects);
@@ -1234,8 +1353,10 @@ function applyData(data){
     const key = ABIL[data.roll.ability] || ABIL[cap(data.roll.ability)] || null;
     if(key) roll = { ability:cap(data.roll.ability), key, dc:clampInt(data.roll.dc,5,25,12), reason:data.roll.reason||"", adv:normAdv(data.roll.adv) };
   }
-  const choices = Array.isArray(data.choices) ? data.choices.filter(c=>typeof c==="string" && c.trim()).slice(0,4) : [];
-  state.pending = { choices, roll };
+  let choices = Array.isArray(data.choices) ? data.choices.filter(c=>typeof c==="string" && c.trim()).slice(0,4) : [];
+  const weak = choices.length===0 && !roll;
+  if(weak) choices = fallbackChoices();
+  state.pending = { choices, roll, weak };
   state.arcResolved = (data.arc==="resolved");
   if(state.hero.hp<=0) die();
   return {sceneChanged};
@@ -1253,7 +1374,7 @@ function applyEffects(fx){
   if(Array.isArray(fx.conditions)) h.conditions = fx.conditions.filter(c=>typeof c==="string" && c.trim());
 }
 /* ---- rolling recap + memory + performance ---- */
-let recapBusy=false;
+let recapBusy=false, recapCtl=null;
 const RECAP_EVERY=8;
 function memoryBlock(h){
   let s="";
@@ -1261,19 +1382,29 @@ function memoryBlock(h){
   if(state.recap) s += "\nSTORY SO FAR (established canon the player cannot see \u2014 stay consistent with it and never contradict it):\n"+state.recap;
   return s;
 }
-function maybeRecap(){ if(state && ((state.beat||0) - (state.recapAt||0) >= RECAP_EVERY)) updateRecap(); }
+function maybeRecap(){ if(!(state && ((state.beat||0) - (state.recapAt||0) >= RECAP_EVERY))) return; setTimeout(()=>{ if(!busy) updateRecap(); }, 5000); }
 async function updateRecap(){
-  if(recapBusy || !state) return; recapBusy=true;
+  if(recapBusy || !state || busy) return; recapBusy=true; recapCtl=new AbortController();
   const beatAt=state.beat;
   const recent = state.turns.slice(-18).map(t=>(t.role==="user"?"PLAYER: ":"DM: ")+t.content).join("\n\n").slice(-12000);
   const sys = "You keep a tight canonical summary of a solo tabletop RPG so the Game Master never loses the thread. Capture: the hero's current situation and location; named NPCs and their stance toward the hero; open quests, threats and promises; the hero's goal and progress toward it; key allies, enemies, items and consequential decisions. Drop minor moment-to-moment detail. Write 120-220 words of plain prose, no headings, no preamble.";
   const prior = state.recap ? "CURRENT SUMMARY:\n"+state.recap+"\n\n" : "";
   const usr = prior + "RECENT SCENES:\n"+recent+"\n\nWrite the updated summary now.";
-  try{ const txt = await streamDM(sys, [{role:"user",content:usr}], { max_tokens:420 }); if(txt && txt.trim().length>40){ state.recap=txt.trim(); state.recapAt=beatAt; save(); } }
+  try{ const txt = await streamDM(sys, [{role:"user",content:usr}], { max_tokens:420, signal:recapCtl.signal }); if(txt && txt.trim().length>40){ state.recap=txt.trim(); state.recapAt=beatAt; save(); } }
   catch(e){}
-  recapBusy=false;
+  recapBusy=false; recapCtl=null;
 }
 function pruneStory(){ const s=$("story"); if(!s) return; const MAX=140; while(s.children.length>MAX) s.removeChild(s.firstChild); }
+function fallbackChoices(){ return state && state.combat ? ["Press the attack","Defend yourself","Look for an opening"] : ["Press on","Study your surroundings","Speak up"]; }
+async function suggestChoices(narration){
+  try{
+    const sys="You suggest next moves in a solo RPG. Reply with ONLY a JSON array of exactly 3 short, SPECIFIC action strings (max ~7 words each) the player could take right now, grounded in the given scene (name the real people, places, objects, exits). No other text.";
+    const txt = await streamDM(sys, [{role:"user",content:"SCENE:\n"+String(narration).slice(-1600)+"\n\nReply with the JSON array only."}], { max_tokens:200 });
+    const a=txt.indexOf("["), b=txt.lastIndexOf("]");
+    if(a!==-1 && b>a){ const arr=JSON.parse(txt.slice(a,b+1)); const ch=arr.filter(x=>typeof x==="string"&&x.trim()).map(x=>x.trim()).slice(0,4);
+      if(ch.length && state && state.pending && state.pending.weak){ state.pending.choices=ch; state.pending.weak=false; if(!busy) renderDock(); save(); } }
+  }catch(e){}
+}
 
 function checkLevel(){
   const h=state.hero; const gained=[];
@@ -1347,7 +1478,9 @@ function proseHtml(text){ return text.split(/\n\s*\n/).map(p=>`<p>${esc(p.trim()
 function scrollStory(){ const s=$("story"); s.scrollTop = s.scrollHeight; }
 function addPlayerRef(idx){ state.log.push({type:"player", t:idx}); const t=el("div","turn player"); t.innerHTML=`<span class="who">${esc(state.hero.name)}</span>${esc(state.turns[idx].content)}`; $("story").appendChild(t); scrollStory(); }
 function removeLastPlayerDisplay(){ for(let i=state.log.length-1;i>=0;i--){ if(state.log[i].type==="player"){ state.log.splice(i,1); break; } } const n=$("story").querySelectorAll(".turn.player"); if(n.length) n[n.length-1].remove(); }
-function addDmPlaceholder(){ const wrap=el("div","turn dm"); const body=el("div","body"); body.innerHTML=`<span class="thinking">The tale unfolds <i></i><i></i><i></i></span>`; wrap.appendChild(body); $("story").appendChild(wrap); scrollStory(); return {wrap, body}; }
+function addDmPlaceholder(){ const wrap=el("div","turn dm"); const body=el("div","body"); body.innerHTML=`<span class="thinking">The tale unfolds <i></i><i></i><i></i></span>`; wrap.appendChild(body); $("story").appendChild(wrap); scrollStory();
+  setTimeout(()=>{ const th=body.querySelector(".thinking"); if(th && th.firstChild) th.firstChild.textContent="The DM is deliberating "; }, 22000);
+  return {wrap, body}; }
 function addRollSlip(r){ state.log.push({type:"roll", r}); renderRollSlip(r); }
 function renderRollSlip(r){
   const slip = el("div","roll-slip"+(r.crit?" crit":r.fumble?" fumble":""));
