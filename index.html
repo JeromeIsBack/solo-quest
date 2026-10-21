@@ -101,6 +101,7 @@
   .begin:active{transform:translateY(1px)}
   .begin:disabled{opacity:.4; filter:grayscale(.4); cursor:not-allowed; box-shadow:none}
   .create-note{text-align:center; color:var(--ink-faint); font-size:.82rem; margin:16px 4px 0; line-height:1.5}
+  .build-tag{text-align:center; color:#4a4538; font-size:.68rem; margin:8px 4px 0; letter-spacing:.08em}
   .credit{text-align:center; color:#5a5344; font-size:.72rem; margin:10px 4px 0; line-height:1.5}
   .credit a{color:#7a6f57}
 
@@ -395,6 +396,7 @@
     <button class="begin" id="beginBtn" disabled>Begin the tale</button>
     <p class="create-note">Narrated live by Claude through your own API key. Combat is grounded in the open D&amp;D 5e SRD.</p>
     <p class="credit">Includes material from the <a href="https://dnd.wizards.com/resources/systems-reference-document" target="_blank" rel="noopener">System Reference Document 5.1</a> by Wizards of the Coast, licensed under <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" rel="noopener">CC-BY-4.0</a>.</p>
+    <p class="build-tag">build 2026-10-21b</p>
   </section>
 
   <section id="play" class="hidden">
@@ -1875,6 +1877,7 @@ loadSRD();
 function updateJumpBtn(){ const s=$("story"), b=$("jumpLatest"); if(!s||!b) return; const scrollable = (s.scrollHeight - s.clientHeight) > 40; b.classList.toggle("hidden", !scrollable); }
 $("story").addEventListener("scroll", updateJumpBtn, {passive:true});
 $("jumpLatest").addEventListener("click", ()=>{ const s=$("story"); try{ s.scrollTo({top:s.scrollHeight, behavior:"smooth"}); }catch(e){ s.scrollTop=s.scrollHeight; } });
+console.log("Solo Quest build 2026-10-21b");
 if("serviceWorker" in navigator){ window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }); }
 </script>
 </body>

@@ -2,7 +2,7 @@
    Key change from v1: the HTML page is fetched NETWORK-FIRST, so you always get
    the latest version when online; the cache is only a fallback when offline.
    Bump CACHE (v2 -> v3 ...) any time you want to force a hard refresh of assets. */
-const CACHE = "solo-quest-v2";
+const CACHE = "solo-quest-v3";
 const SHELL = [
   "./",
   "./index.html",
